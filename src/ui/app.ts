@@ -36,6 +36,7 @@ import {
   subscribe,
 } from "../store";
 import type { Hand, LayerId, PhraseNote, PhraseStyle } from "../types";
+import { mountIntro } from "./intro";
 import { KEY_COUNT, START_MIDI, isBlack, midiToComputerKey, qwertyToMidi } from "./keyboard";
 
 const messages: AgentMessage[] = [
@@ -159,6 +160,47 @@ const renderKeys = (): void => {
   }
 };
 
+/* ---- keybed panning ----
+   Below roughly 1180px the bed is wider than its window, because a key narrower
+   than a fingertip is worse than a key you have to scroll to. So the window
+   pans: to whatever the lesson lights next, or by an octave on the buttons. */
+
+const keybed = (): HTMLElement | null => document.querySelector<HTMLElement>("#keybed");
+
+const bedOverflow = (bed: HTMLElement): number => bed.scrollWidth - bed.clientWidth;
+
+let revealedMidi = -1;
+
+/** Centre the key a lesson is pointing at, once per target. */
+const revealKey = (key: HTMLElement | null): void => {
+  if (!key) {
+    revealedMidi = -1;
+    return;
+  }
+  const midi = Number(key.dataset.midi);
+  if (midi === revealedMidi) return;
+  const bed = keybed();
+  if (!bed) return;
+  revealedMidi = midi;
+  const overflow = bedOverflow(bed);
+  if (overflow <= 1) return;
+  const centred = key.offsetLeft + key.offsetWidth / 2 - bed.clientWidth / 2;
+  bed.scrollTo({ left: Math.max(0, Math.min(overflow, centred)), behavior: "smooth" });
+};
+
+const panKeybed = (direction: 1 | -1): void => {
+  const bed = keybed();
+  if (!bed) return;
+  bed.scrollBy({ left: (direction * bed.scrollWidth) / 3, behavior: "smooth" });
+};
+
+const syncPanButtons = (): void => {
+  const bed = keybed();
+  const idle = !bed || bedOverflow(bed) <= 1;
+  document.querySelector("#pan-left")?.classList.toggle("hidden-pan", idle);
+  document.querySelector("#pan-right")?.classList.toggle("hidden-pan", idle);
+};
+
 const renderMessages = (): void => {
   const log = document.querySelector("#agent-log");
   if (!log) return;
@@ -271,6 +313,7 @@ const updateView = (): void => {
       dial.parentElement?.style.setProperty("--val", String(value));
     }
   });
+  let firstNextKey: HTMLElement | null = null;
   document.querySelectorAll<HTMLElement>(".key").forEach((key) => {
     const midi = Number(key.dataset.midi);
     const you = state.humanHeld.includes(midi);
@@ -284,7 +327,9 @@ const updateView = (): void => {
     key.classList.toggle("on-landmark", landmarks.includes(midi % 12));
     setKeyTag(key, "key-badge", next ? midiToComputerKey(midi) ?? "" : "");
     setKeyTag(key, "key-finger", next ? fingerBadge(midi) : "");
+    if (next && !firstNextKey) firstNextKey = key;
   });
+  revealKey(firstNextKey);
   renderHands();
   renderRoll();
 };
@@ -351,13 +396,18 @@ const handleAgent = async (): Promise<void> => {
 /* ---- segmented LED VU meter ---- */
 
 const METER_W = 26;
-const METER_H = 84;
-const SEGMENTS = 14;
+const METER_H = 66;
+const SEGMENTS = 11;
 const SEG_GAP = 1.6;
 
+/* Top two segments read red, the three below them amber — expressed relative to
+   SEGMENTS so the scale survives a resize of the meter. */
+const RED_FROM = SEGMENTS - 2;
+const AMBER_FROM = SEGMENTS - 5;
+
 const segColor = (index: number, lit: boolean): string => {
-  if (!lit) return index >= 12 ? "#2a1410" : index >= 9 ? "#2b2413" : "#12280f";
-  return index >= 12 ? "#ff5a3c" : index >= 9 ? "#ffd23f" : "#9dff6a";
+  if (!lit) return index >= RED_FROM ? "#2a1410" : index >= AMBER_FROM ? "#2b2413" : "#12280f";
+  return index >= RED_FROM ? "#ff5a3c" : index >= AMBER_FROM ? "#ffd23f" : "#9dff6a";
 };
 
 const drawMeterColumn = (
@@ -376,7 +426,12 @@ const drawMeterColumn = (
   }
 };
 
+const armEverything = (): void => {
+  void ensureAudio().then(() => connectMidi());
+};
+
 export const mountApp = (): void => {
+  mountIntro(armEverything);
   renderKeys();
   renderMessages();
   updateView();
@@ -389,9 +444,7 @@ export const mountApp = (): void => {
     });
   });
 
-  document.querySelector("#arm")?.addEventListener("click", () => {
-    void ensureAudio().then(() => connectMidi());
-  });
+  document.querySelector("#arm")?.addEventListener("click", armEverything);
   document.querySelector("#lcd")?.addEventListener("click", () => {
     patchState({ lcdPage: state.lcdPage === "browse" ? "envelope" : "browse" });
   });
@@ -419,6 +472,13 @@ export const mountApp = (): void => {
   document.querySelector("#note-names")?.addEventListener("click", () => {
     patchState({ noteNames: !state.noteNames });
   });
+  document.querySelector("#pan-left")?.addEventListener("click", () => panKeybed(-1));
+  document.querySelector("#pan-right")?.addEventListener("click", () => panKeybed(1));
+  const bed = keybed();
+  // Fires once on observe, so it also covers first layout — the bed's width is
+  // not known until the chassis has been laid out.
+  if (bed) new ResizeObserver(syncPanButtons).observe(bed);
+  else window.addEventListener("resize", syncPanButtons);
   document.querySelector("#bars")?.addEventListener("click", () => {
     patchState({ bars: state.bars === 4 ? 8 : 4 });
   });

@@ -12,27 +12,129 @@
   </head>
   <body class="min-h-screen bg-ink text-[#e6e2d8] font-mono">
     <div class="grain" aria-hidden="true"></div>
-    <header class="relative z-10 flex items-end justify-between px-6 pt-5 pb-3">
-      <div>
-        <p class="text-[11px] tracking-[0.35em] text-amber/80">ANYONE CAN START · TODAY</p>
-        <h1 class="font-display text-5xl leading-none tracking-wide">KEYLIT</h1>
-        <p class="mt-2 text-[12px] tracking-[0.08em] text-[#9aa1a8]">Learn piano. The next key is already glowing. You play it. Your teacher hears you on this page.</p>
+
+    <section id="intro" class="intro" aria-label="Welcome to KEYLIT">
+      <div class="intro-card">
+        <div class="intro-head">
+          <p class="intro-eyebrow">ANYONE CAN START · TODAY</p>
+          <h1 class="intro-title font-display">KEYLIT</h1>
+          <p class="intro-lede">
+            The next key is already glowing. You play it — and your teacher hears you on
+            <em>this</em> page, then lights the one after. A chat in another tab cannot do that.
+          </p>
+          <ul class="intro-legend">
+            <li><span class="swatch next"></span>play this next</li>
+            <li><span class="swatch landmark"></span>look here</li>
+            <li><span class="swatch you"></span>you</li>
+            <li><span class="swatch agent"></span>your teacher</li>
+          </ul>
+        </div>
+
+        <div class="intro-pick">
+          <p class="intro-kicker">First, find the note</p>
+          <div class="intro-grid">
+            <button class="lesson-tile" data-recipe="teach me" type="button">
+              <em>Find any C</em>
+              <span>C sits left of every group of 2.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="first keys" type="button">
+              <em>Play C D E</em>
+              <span>Three white keys in a row.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="finger numbers" type="button">
+              <em>Finger numbers</em>
+              <span>Thumb is 1. Little finger is 5.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="left hand" type="button">
+              <em>Left hand</em>
+              <span>The same five fingers, mirrored.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="both hands" type="button">
+              <em>Both hands</em>
+              <span>Low C and middle C together.</span>
+            </button>
+          </div>
+
+          <p class="intro-kicker">Then play a song</p>
+          <div class="intro-grid">
+            <button class="lesson-tile" data-recipe="C scale" type="button">
+              <em>C major scale</em>
+              <span>Eight keys, no black ones.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="C chord" type="button">
+              <em>C major chord</em>
+              <span>C, E, G — then hold all three.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="Twinkle" type="button">
+              <em>Twinkle Twinkle</em>
+              <span>The tune everybody knows.</span>
+            </button>
+            <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
+              <em>Ode to Joy</em>
+              <span>Beethoven’s first phrase.</span>
+            </button>
+            <button class="lesson-tile hero" data-recipe="Happy Birthday" type="button">
+              <em>Happy Birthday</em>
+              <span>The whole song, one key at a time.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="intro-actions">
+          <button id="intro-start" class="generate lg" type="button">Start playing</button>
+          <p class="intro-note">Turns on the sound and looks for a MIDI keyboard. Pick a lesson above, or just play.</p>
+        </div>
       </div>
-      <div class="text-right text-[11px] uppercase tracking-[0.18em] text-[#9aa1a8]">
+    </section>
+
+    <header class="page-head">
+      <div class="page-head-name">
+        <h1 class="font-display text-3xl leading-none tracking-wide">KEYLIT</h1>
+        <p class="page-head-sub">The next key is already glowing</p>
+      </div>
+      <div class="page-head-status">
         <p id="webmcp-status">WebMCP booting…</p>
         <p id="midi-label">MIDI · None</p>
         <p id="pedal-label">SUSTAIN · UP</p>
       </div>
     </header>
 
-    <main class="relative z-10 mx-auto grid max-w-[1280px] gap-5 px-6 pb-8 xl:grid-cols-[1fr_320px]">
+    <div class="chat-bar-wrap">
+      <section class="chat-bar" aria-label="Piano teacher">
+        <div class="chat-line">
+          <p class="chat-pill">TEACHER</p>
+          <p id="lesson-coach" class="chat-coach">Press teach me. I will show you where C is first.</p>
+          <p class="chat-take">Last take <span id="take-notes">—</span></p>
+        </div>
+
+        <form id="agent-form" class="chat-form">
+          <input id="agent-input" class="agent-input" placeholder="Teach me piano…" aria-label="Ask the teacher" />
+          <button class="generate sm" type="submit">Go</button>
+          <button class="ghost-btn" data-intro-open type="button">Lessons</button>
+        </form>
+
+        <div class="chat-chips">
+          <button id="next-chip" class="chip" data-recipe="show next" type="button">show next</button>
+          <button class="chip" data-recipe="hear it" type="button">hear it</button>
+          <button class="chip" data-recipe="stop lesson" type="button">stop lesson</button>
+          <button class="chip" data-recipe="harmonize" type="button">harmonize</button>
+          <button class="chip" data-recipe="answer me" type="button">answer me</button>
+          <button id="follow-chip" class="chip" data-recipe="follow me" type="button">follow me</button>
+          <button class="chip" data-recipe="what do you hear" type="button">what do you hear</button>
+        </div>
+
+        <details class="chat-transcript">
+          <summary>Transcript</summary>
+          <div id="agent-log" class="agent-log" aria-live="polite"></div>
+        </details>
+      </section>
+    </div>
+
+    <main class="relative z-10 mx-auto grid max-w-[1280px] gap-5 px-6 pb-3">
       <section class="rack" aria-label="KEYLIT piano teacher">
         <div class="rack-face">
           <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="logo-plaque font-display text-3xl tracking-[0.2em]"><span>KEYLIT</span></p>
-              <p class="rack-sub mt-2 text-[10px] tracking-[0.28em]">THE NEXT KEY IS ALREADY GLOWING</p>
-            </div>
+            <p class="logo-plaque font-display text-3xl tracking-[0.2em]"><span>KEYLIT</span></p>
             <div class="flex items-center gap-4">
               <button id="arm" class="ghost-btn" type="button">Arm audio + MIDI</button>
               <div class="power-wrap">
@@ -42,7 +144,7 @@
             </div>
           </div>
 
-          <div class="mt-5 grid gap-4 md:grid-cols-[92px_1fr_120px]">
+          <div class="mt-4 grid gap-4 md:grid-cols-[84px_1fr_110px]">
             <div class="flex flex-col justify-center gap-5">
               <label class="knob-wrap">
                 <span class="dial" style="--rot: 80deg"></span>
@@ -84,11 +186,14 @@
                 <em>MASTER</em>
               </label>
               <div class="meter-wrap">
-                <canvas id="meter" width="26" height="84" class="meter" aria-hidden="true"></canvas>
+                <canvas id="meter" width="26" height="66" class="meter" aria-hidden="true"></canvas>
                 <div class="meter-labels" aria-hidden="true"><span>L</span><span>R</span></div>
               </div>
             </div>
           </div>
+
+          <details class="studio">
+          <summary class="section-rule studio-summary"><span>STUDIO</span></summary>
 
           <div class="mt-4 flex flex-wrap items-center gap-2">
             <button id="prev-preset" class="mini" type="button">A −</button>
@@ -106,8 +211,6 @@
               <option value="B">to B</option>
             </select>
           </div>
-
-          <div class="section-rule"><span>EFFECTS</span></div>
 
           <div class="fx-row">
             <label class="knob-wrap sm">
@@ -151,25 +254,34 @@
             <span id="style-label" class="sr-only">piano</span>
           </div>
 
-          <div id="lesson-strip" class="lesson-strip" aria-live="polite">
-            <span id="lesson-pill" class="pill next">NEXT</span>
-            <span id="lesson-next" class="duet-notes">Ask me to teach</span>
-            <span id="lesson-progress" class="duet-mid">NO LESSON</span>
-            <span id="lesson-hits" class="lesson-hits">0 / 0</span>
-          </div>
-          <div id="duet-strip" class="duet-strip" aria-live="polite">
-            <span id="you-pill" class="pill you">YOU</span>
-            <span id="you-notes" class="duet-notes">—</span>
-            <span class="duet-mid">SAME KEYS</span>
-            <span id="agent-pill" class="pill agent">AGENT</span>
-            <span id="agent-notes" class="duet-notes">—</span>
-          </div>
           <div id="phrase-roll" class="roll" aria-label="Phrase roll"></div>
+          </details>
+
+          <div class="strip-row">
+            <div id="lesson-strip" class="lesson-strip" aria-live="polite">
+              <span id="lesson-pill" class="pill next">NEXT</span>
+              <span id="lesson-next" class="duet-notes">Ask me to teach</span>
+              <span id="lesson-progress" class="duet-mid">NO LESSON</span>
+              <span id="lesson-hits" class="lesson-hits">0 / 0</span>
+            </div>
+            <div id="duet-strip" class="duet-strip" aria-live="polite">
+              <span id="you-pill" class="pill you">YOU</span>
+              <span id="you-notes" class="duet-notes">—</span>
+              <span class="duet-mid">SAME KEYS</span>
+              <span id="agent-pill" class="pill agent">AGENT</span>
+              <span id="agent-notes" class="duet-notes">—</span>
+            </div>
+          </div>
+
           <div class="keybed-bar">
             <p class="keybed-legend">
               Cyan = play this next · violet = look here · amber = you · green = agent
             </p>
-            <button id="note-names" class="mini" type="button">Note names</button>
+            <div class="keybed-tools">
+              <button id="pan-left" class="mini" type="button" aria-label="Show lower keys">◀</button>
+              <button id="pan-right" class="mini" type="button" aria-label="Show higher keys">▶</button>
+              <button id="note-names" class="mini" type="button">Note names</button>
+            </div>
           </div>
 
           <div id="hand-map" class="hand-map hidden" aria-hidden="true">
@@ -205,44 +317,12 @@
             </div>
           </div>
 
-          <div id="piano" class="piano" role="group" aria-label="Virtual piano"></div>
+          <div id="keybed" class="keybed-scroll">
+            <div id="piano" class="piano" role="group" aria-label="Virtual piano"></div>
+          </div>
         </div>
       </section>
 
-      <aside class="agent-panel" aria-label="Piano teacher">
-        <p class="text-[10px] tracking-[0.3em] text-amber">YOUR TEACHER IS ON THE KEYS</p>
-        <h2 class="font-display text-2xl mt-1">First, find the note</h2>
-        <p class="mt-2 text-[12px] leading-relaxed text-[#b9bfc4]">
-          I glow it. You play it. I hear you here — then the next key lights. A chat in another tab cannot do that.
-        </p>
-        <p id="lesson-coach" class="take-line">Press teach me. I will show you where C is first.</p>
-        <p class="take-line">Last take <span id="take-notes">—</span></p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button class="chip" data-recipe="teach me" type="button">teach me</button>
-          <button class="chip" data-recipe="find C" type="button">find C</button>
-          <button class="chip" data-recipe="finger numbers" type="button">fingers</button>
-          <button class="chip" data-recipe="left hand" type="button">left hand</button>
-          <button class="chip" data-recipe="both hands" type="button">both hands</button>
-          <button class="chip" data-recipe="C scale" type="button">C scale</button>
-          <button class="chip" data-recipe="C chord" type="button">C chord</button>
-          <button class="chip" data-recipe="Twinkle" type="button">Twinkle</button>
-          <button class="chip" data-recipe="Happy Birthday" type="button">Birthday</button>
-          <button id="next-chip" class="chip" data-recipe="show next" type="button">show next</button>
-          <button class="chip" data-recipe="hear it" type="button">hear it</button>
-          <button class="chip" data-recipe="stop lesson" type="button">stop lesson</button>
-        </div>
-        <div class="mt-2 flex flex-wrap gap-2">
-          <button class="chip" data-recipe="harmonize" type="button">harmonize</button>
-          <button class="chip" data-recipe="answer me" type="button">answer me</button>
-          <button id="follow-chip" class="chip" data-recipe="follow me" type="button">follow me</button>
-          <button class="chip" data-recipe="what do you hear" type="button">what do you hear</button>
-        </div>
-        <div id="agent-log" class="agent-log" aria-live="polite"></div>
-        <form id="agent-form" class="mt-3 flex gap-2">
-          <input id="agent-input" class="agent-input" placeholder="Teach me piano…" aria-label="Ask the teacher" />
-          <button class="generate sm" type="submit">Go</button>
-        </form>
-      </aside>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

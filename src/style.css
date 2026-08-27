@@ -20,7 +20,10 @@
   --ebony-lip:  linear-gradient(180deg,#0f1114 0%,#2b2f34 55%,#43474d 100%);
   --key-gap:#14161a;
   --felt:#2a1013;
-  --keybed-h:158px;
+  --keybed-h:210px;
+  /* Floor for one white key. Below this the bed scrolls instead of shrinking —
+     a key narrower than a fingertip is not playable. */
+  --white-w:56px;
 
   /* signal — product-critical, do not mute */
   --you:231,195,106;        /* amber  = human  */
@@ -60,11 +63,15 @@ body {
 
 /* ---------- chassis ---------- */
 
+/* A grid item defaults to min-width:auto, which would let the keybed's
+   min-width push the whole page wide. The bed scrolls inside itself instead. */
+.rack { min-width: 0; }
+
 .rack-face {
   position: relative;
   isolation: isolate;
   border-radius: var(--r-chassis);
-  padding: 22px 22px 0;
+  padding: 16px 22px 0;
   border: 1px solid var(--chassis-edge);
   background-image:
     var(--screw), var(--screw), var(--screw), var(--screw),
@@ -119,7 +126,7 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 22px;
+  margin-top: 14px;
 }
 
 .section-rule::before,
@@ -139,14 +146,39 @@ body {
   text-shadow: 0 1px 0 rgba(0,0,0,.85), 0 -1px 0 rgba(255,255,255,.07);
 }
 
+/* ---------- studio drawer ---------- */
+
+/* Closed by default: sound design is not what a first-timer needs, and every
+   row it gives back goes to the keybed. */
+.studio-summary {
+  cursor: pointer;
+  list-style: none;
+  transition: opacity var(--t-ui);
+}
+
+.studio-summary::-webkit-details-marker { display: none; }
+.studio-summary:hover { opacity: .78; }
+
+.studio-summary span::after {
+  content: " +";
+  color: var(--label-dim);
+}
+
+.studio[open] > .studio-summary span::after { content: " −"; }
+
+.studio-summary:focus-visible {
+  outline: 2px solid var(--led-green);
+  outline-offset: 4px;
+}
+
 /* ---------- LCD ---------- */
 
 .lcd {
   position: relative;
   isolation: isolate;
   width: 100%;
-  min-height: 152px;
-  padding: 16px 18px;
+  min-height: 138px;
+  padding: 14px 18px;
   border: 0;
   border-radius: 5px;
   background: radial-gradient(125% 90% at 50% 36%, var(--lcd-bg) 0%, var(--lcd-bg-2) 70%, #8fac16 100%);
@@ -315,8 +347,8 @@ select.mini {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding-top: 12px;
+  gap: 5px;
+  padding-top: 9px;
   color: var(--label);
   font-size: 10px;
   letter-spacing: .16em;
@@ -354,7 +386,7 @@ select.mini {
     0 1px 0 rgba(255,255,255,.10);
 }
 
-.dial.master { width: 62px; height: 62px; }
+.dial.master { width: 54px; height: 54px; }
 
 /* brushed metal cap */
 .dial::before {
@@ -387,7 +419,7 @@ select.mini {
   transition: transform 100ms linear;
 }
 
-.dial.master::after { height: 15px; transform-origin: 50% 24px; }
+.dial.master::after { height: 14px; transform-origin: 50% 20px; }
 
 .knob-wrap input[type="range"] {
   width: 54px;
@@ -432,13 +464,28 @@ select.mini {
    THE KEYBED
    ============================================================ */
 
+/* Bleeds past the chassis padding to the case edge, and pans horizontally when
+   the viewport is too narrow to hold 21 keys at --white-w. The scrollbar is
+   hidden on purpose: the ◀ ▶ buttons and auto-scroll are the real controls,
+   and the keys own touch gestures for glissando. */
+.keybed-scroll {
+  margin: 12px -22px 0;
+  border-radius: 0 0 15px 15px;
+  background: #08090b;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+
+.keybed-scroll::-webkit-scrollbar { display: none; }
+
 .piano {
   position: relative;
   height: var(--keybed-h);
-  margin: 16px -22px 0;
-  border-radius: 0 0 15px 15px;
-  background: #08090b;
-  overflow: hidden;
+  min-width: calc(21 * var(--white-w));
   isolation: isolate;
   perspective: 1200px;
   perspective-origin: 50% 0%;
@@ -622,7 +669,7 @@ select.mini {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .keybed-legend {
@@ -630,6 +677,16 @@ select.mini {
   letter-spacing: .16em;
   color: var(--label-dim);
 }
+
+.keybed-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Only worth showing when the bed actually overflows. */
+.keybed-tools .mini.hidden-pan { visibility: hidden; }
 
 .hand-map {
   display: flex;
@@ -828,6 +885,16 @@ select.mini {
 .duet-strip  { grid-template-columns: auto 1fr auto auto 1fr; }
 .lesson-strip { grid-template-columns: auto 1fr auto auto; }
 
+/* Both strips on one line — the lesson strip is the one that matters, so it
+   gets the extra room. */
+.strip-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+.strip-row > * { margin-top: 10px; }
+
 .duet-strip.together {
   border-color: rgba(157,255,106,.6);
   box-shadow: inset 0 2px 6px rgba(0,0,0,.6), 0 0 0 1px rgba(157,255,106,.22);
@@ -922,30 +989,149 @@ select.mini {
   box-shadow: 0 0 8px rgba(231,195,106,.7);
 }
 
-/* ---------- agent panel ---------- */
+/* ---------- page head ---------- */
 
-.agent-panel {
+.page-head {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px 24px 8px;
+}
+
+.page-head-name { display: flex; align-items: baseline; gap: 14px; }
+
+.page-head-sub {
+  font-size: 10px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+}
+
+.page-head-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 16px;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+  text-align: right;
+}
+
+/* ============================================================
+   CHAT BAR — the teacher, docked above the instrument. Wide and
+   short on purpose: every row it takes is a row off the keybed.
+   ============================================================ */
+
+.chat-bar-wrap {
+  position: relative;
+  z-index: 10;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 14px;
+}
+
+.chat-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "line  form"
+    "chips chips"
+    "log   log";
+  align-items: center;
+  gap: 8px 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--chassis-edge);
+  border-radius: 12px;
   background:
     repeating-linear-gradient(90deg,
       rgba(255,255,255,.018) 0 1px, rgba(0,0,0,.022) 1px 2px, transparent 2px 5px),
-    linear-gradient(180deg, var(--chassis-1) 0%, var(--chassis-2) 60%, var(--chassis-3) 100%);
-  border: 1px solid var(--chassis-edge);
-  border-radius: var(--r-chassis);
-  padding: 18px;
-  min-height: 520px;
-  display: flex;
-  flex-direction: column;
+    linear-gradient(180deg, var(--chassis-1) 0%, var(--chassis-2) 70%, var(--chassis-3) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.10),
     inset 0 -1px 0 rgba(0,0,0,.8),
-    0 30px 80px rgba(0,0,0,.5);
+    0 12px 34px rgba(0,0,0,.45);
 }
 
-.agent-log {
-  margin-top: 14px;
+.chat-line {
+  grid-area: line;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.chat-pill {
+  padding: 3px 8px;
+  border: 1px solid rgba(var(--agent),.35);
+  border-radius: 99px;
+  font-size: 9px;
+  letter-spacing: .22em;
+  color: rgb(var(--agent));
+}
+
+.chat-coach {
   flex: 1;
+  min-width: 220px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.chat-take {
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+  white-space: nowrap;
+}
+
+.chat-take span { color: rgb(var(--you)); }
+
+.chat-form {
+  grid-area: form;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(420px, 100%);
+}
+
+.chat-chips {
+  grid-area: chips;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--well-line);
+}
+
+.chat-chips .chip { padding: 5px 10px; font-size: 10px; }
+
+.chat-transcript { grid-area: log; }
+
+.chat-transcript summary {
+  width: max-content;
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+  cursor: pointer;
+}
+
+.chat-transcript summary:hover { color: var(--label); }
+.chat-transcript[open] summary { color: var(--label); }
+
+.agent-log {
   overflow: auto;
-  max-height: 360px;
+  max-height: 220px;
   padding-right: 4px;
 }
 
@@ -991,7 +1177,7 @@ select.mini {
 
 .meter {
   width: 26px;
-  height: 84px;
+  height: 66px;
   border-radius: 3px;
   background: #08090a;
   box-shadow: inset 0 0 0 1px #000, inset 0 2px 6px rgba(0,0,0,.9);
@@ -1002,6 +1188,183 @@ select.mini {
   gap: 10px;
   font-size: 8px;
   letter-spacing: .2em;
+  color: var(--label-dim);
+}
+
+/* ============================================================
+   INTRO — the first screen. Says what the app is, then gets out
+   of the way so the keybed owns the page.
+   ============================================================ */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 36px 20px;
+  background:
+    radial-gradient(760px 420px at 50% -8%, rgba(94,200,255,.10) 0%, transparent 62%),
+    radial-gradient(620px 380px at 82% 12%, rgba(157,255,106,.07) 0%, transparent 60%),
+    rgba(6,7,8,.95);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.intro-card {
+  width: min(880px, 100%);
+  margin: auto;
+  padding: 34px 34px 30px;
+  border: 1px solid var(--chassis-edge);
+  border-radius: var(--r-chassis);
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.018) 0 1px, rgba(0,0,0,.022) 1px 2px, transparent 2px 5px),
+    linear-gradient(180deg, var(--chassis-1) 0%, var(--chassis-2) 62%, var(--chassis-3) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.8),
+    0 40px 110px rgba(0,0,0,.7);
+  animation: intro-rise 420ms var(--ease-out) backwards;
+}
+
+.intro-eyebrow {
+  font-size: 11px;
+  letter-spacing: .35em;
+  color: rgba(231,195,106,.8);
+}
+
+.intro-title {
+  margin-top: 4px;
+  font-size: clamp(44px, 8vw, 76px);
+  line-height: .92;
+  letter-spacing: .04em;
+}
+
+.intro-lede {
+  max-width: 56ch;
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #b9bfc4;
+}
+
+.intro-lede em { font-style: normal; color: rgb(var(--next)); }
+
+.intro-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 16px;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+}
+
+.intro-legend li { display: flex; align-items: center; gap: 7px; }
+
+.swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  box-shadow: 0 0 9px rgba(var(--sig), .65);
+  background: rgb(var(--sig));
+}
+
+.swatch.next     { --sig: var(--next); }
+.swatch.landmark { --sig: var(--landmark); }
+.swatch.you      { --sig: var(--you); }
+.swatch.agent    { --sig: var(--agent); }
+
+.intro-pick { margin-top: 26px; }
+
+.intro-kicker {
+  margin-bottom: 10px;
+  font-family: Tektur, sans-serif;
+  font-size: 12px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.intro-kicker + .intro-grid + .intro-kicker { margin-top: 22px; }
+
+/* Each group is five lessons, so the row is five wide — auto-fit would leave a
+   lone tile stranded at 4 columns. */
+.intro-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.lesson-tile {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 11px 13px;
+  text-align: left;
+  border: 1px solid var(--well-line);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #23272a, #16191b);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 5px rgba(0,0,0,.5);
+  transition: border-color var(--t-ui), background var(--t-ui), transform 90ms var(--ease-key);
+}
+
+.lesson-tile em {
+  font-style: normal;
+  font-family: Tektur, sans-serif;
+  font-size: 14px;
+  letter-spacing: .05em;
+  color: var(--text);
+}
+
+.lesson-tile span {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--label-dim);
+}
+
+.lesson-tile:hover {
+  border-color: rgba(var(--next),.55);
+  background: linear-gradient(180deg, #2a2f33, #191d1f);
+}
+
+.lesson-tile:hover span { color: var(--label); }
+.lesson-tile:active { transform: translateY(1px); }
+
+.lesson-tile:focus-visible {
+  outline: 2px solid var(--led-green);
+  outline-offset: 2px;
+}
+
+.lesson-tile.hero {
+  border-color: rgba(var(--you),.42);
+  background: linear-gradient(180deg, #2a2519, #191713);
+}
+
+.lesson-tile.hero em { color: #f6dc90; }
+
+.intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--well-line);
+}
+
+.generate.lg {
+  padding: 13px 30px;
+  font-size: 14px;
+}
+
+.intro-note {
+  flex: 1;
+  min-width: 200px;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--label-dim);
 }
 
@@ -1036,19 +1399,64 @@ select.mini {
   to   { translate: 0 0;    opacity: 1; }
 }
 
+@keyframes intro-rise {
+  from { translate: 0 14px; opacity: 0; }
+  to   { translate: 0 0;    opacity: 1; }
+}
+
 /* ---------- responsive ---------- */
 
 @media (pointer: coarse) {
-  :root { --t-key: 32ms; }
+  :root { --t-key: 32ms; --white-w: 64px; }
   .key { animation: none; }
   .key.on-next { animation: none; }
 }
 
 @media (max-width: 900px) {
   .fx-row { grid-template-columns: repeat(3, 1fr); row-gap: 16px; }
-  .duet-strip { grid-template-columns: auto 1fr; }
-  .lesson-strip { grid-template-columns: auto 1fr; }
-  :root { --keybed-h: 128px; }
+
+  :root { --keybed-h: 176px; }
+  .strip-row { grid-template-columns: 1fr; gap: 0; }
+  .page-head { padding: 12px 16px 8px; }
+  .page-head-sub { display: none; }
+  .chat-bar-wrap { padding: 0 16px 12px; }
+
+  .chat-bar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "line"
+      "form"
+      "chips"
+      "log";
+  }
+
+  .chat-form { width: 100%; }
+  .chat-take { display: none; }
+}
+
+@media (max-width: 700px) {
+  .intro-card { padding: 24px 20px 22px; }
+  .intro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .intro-actions { margin-top: 22px; }
+}
+
+@media (max-width: 640px) {
+  .lesson-strip { grid-template-columns: auto minmax(0, 1fr); }
+  /* Keep both readouts on one line; "SAME KEYS" is decoration. */
+  .duet-strip { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); }
+  .duet-strip .duet-mid { display: none; }
+}
+
+/* Key WIDTH is what a wide finger needs, so depth is what gives way on a short
+   screen — the bed still ends up deeper than it was before this layout. */
+@media (max-height: 900px) {
+  :root { --keybed-h: 184px; }
+}
+
+@media (max-height: 780px) {
+  :root { --keybed-h: 160px; }
+  .chat-bar { gap: 6px 14px; }
+  .lcd { min-height: 120px; }
 }
 
 /* keep last */
