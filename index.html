@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KEYLIT — learn piano. The next key is already glowing.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Tektur:wght@500;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body class="min-h-screen bg-ink text-[#e6e2d8] font-mono">
+    <div class="grain" aria-hidden="true"></div>
+    <header class="relative z-10 flex items-end justify-between px-6 pt-5 pb-3">
+      <div>
+        <p class="text-[11px] tracking-[0.35em] text-amber/80">ANYONE CAN START · TODAY</p>
+        <h1 class="font-display text-5xl leading-none tracking-wide">KEYLIT</h1>
+        <p class="mt-2 text-[12px] tracking-[0.08em] text-[#9aa1a8]">Learn piano. The next key is already glowing. You play it. Your teacher hears you on this page.</p>
+      </div>
+      <div class="text-right text-[11px] uppercase tracking-[0.18em] text-[#9aa1a8]">
+        <p id="webmcp-status">WebMCP booting…</p>
+        <p id="midi-label">MIDI · None</p>
+        <p id="pedal-label">SUSTAIN · UP</p>
+      </div>
+    </header>
+
+    <main class="relative z-10 mx-auto grid max-w-[1280px] gap-5 px-6 pb-8 lg:grid-cols-[1fr_320px]">
+      <section class="rack" aria-label="KEYLIT piano teacher">
+        <div class="rack-face">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="logo-plaque font-display text-3xl tracking-[0.2em]"><span>KEYLIT</span></p>
+              <p class="rack-sub mt-2 text-[10px] tracking-[0.28em]">THE NEXT KEY IS ALREADY GLOWING</p>
+            </div>
+            <div class="flex items-center gap-4">
+              <button id="arm" class="ghost-btn" type="button">Arm audio + MIDI</button>
+              <div class="power-wrap">
+                <em>POWER</em>
+                <div id="power" class="power" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-4 md:grid-cols-[92px_1fr_120px]">
+            <div class="flex flex-col justify-center gap-5">
+              <label class="knob-wrap">
+                <span class="dial" style="--rot: 80deg"></span>
+                <input data-knob="volA" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Volume A" />
+                <em>VOL A</em>
+              </label>
+              <label class="knob-wrap">
+                <span class="dial" style="--rot: 10deg"></span>
+                <input data-knob="volB" type="range" min="0" max="1" step="0.01" value="0" aria-label="Volume B" />
+                <em>VOL B</em>
+              </label>
+            </div>
+
+            <button id="lcd" class="lcd" type="button" aria-label="Toggle LCD page">
+              <div class="flex justify-between text-[11px] tracking-[0.2em]">
+                <span id="lcd-mode">EDIT</span>
+                <span id="lcd-title">STEINWAY INIT</span>
+                <span>PRV / NXT</span>
+              </div>
+              <div id="browse-page" class="mt-3 space-y-2 text-left">
+                <p id="lcd-engine" class="text-[10px] tracking-[0.14em]">ARM TO LOAD SAMPLES</p>
+                <p id="lcd-duet">PLAY FIRST · I LISTEN ON THESE KEYS</p>
+                <p id="lcd-layer-a">A STEINWAY</p>
+                <p id="lcd-layer-b">B ENSEMBLE</p>
+              </div>
+              <div id="envelope-page" class="hidden mt-2">
+                <svg viewBox="0 0 300 100" class="h-16 w-full">
+                  <path id="env-path" d="M16 88 L40 18 L90 50 L220 50 L280 88" fill="none" stroke="#2c3a08" stroke-width="3" />
+                </svg>
+                <p id="lcd-adsr" class="text-left">A 4ms</p>
+              </div>
+            </button>
+
+            <div class="flex flex-col items-end justify-between">
+              <span id="agent-chip" class="text-[10px] tracking-[0.2em]">YOU / AGENT</span>
+              <label class="knob-wrap">
+                <span class="dial master" style="--rot: 60deg"></span>
+                <input data-knob="master" type="range" min="0" max="1" step="0.01" value="0.72" aria-label="Master volume" />
+                <em>MASTER</em>
+              </label>
+              <div class="meter-wrap">
+                <canvas id="meter" width="26" height="84" class="meter" aria-hidden="true"></canvas>
+                <div class="meter-labels" aria-hidden="true"><span>L</span><span>R</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <button id="prev-preset" class="mini" type="button">A −</button>
+            <button id="next-preset" class="mini" type="button">A +</button>
+            <button id="lock-a" class="mini" type="button">Lock A</button>
+            <button id="prev-b" class="mini" type="button">B −</button>
+            <button id="next-b" class="mini" type="button">B +</button>
+            <button id="lock-b" class="mini" type="button">Lock B</button>
+            <label class="mini file">
+              Import
+              <input id="user-sample" type="file" accept="audio/*" class="sr-only" />
+            </label>
+            <select id="user-layer" class="mini" aria-label="Import to layer">
+              <option value="A">to A</option>
+              <option value="B">to B</option>
+            </select>
+          </div>
+
+          <div class="section-rule"><span>EFFECTS</span></div>
+
+          <div class="fx-row">
+            <label class="knob-wrap sm">
+              <span class="dial" style="--rot: 60deg"></span>
+              <input data-knob="filter" type="range" min="0" max="1" step="0.01" value="0.92" aria-label="Filter" />
+              <em>FILTER</em>
+            </label>
+            <label class="knob-wrap sm">
+              <span class="dial" style="--rot: -80deg"></span>
+              <input data-knob="distortion" type="range" min="0" max="1" step="0.01" value="0" aria-label="Distortion" />
+              <em>DIST</em>
+            </label>
+            <label class="knob-wrap sm">
+              <span class="dial" style="--rot: -100deg"></span>
+              <input data-knob="crush" type="range" min="0" max="1" step="0.01" value="0" aria-label="Crush" />
+              <em>CRUSH</em>
+            </label>
+            <label class="knob-wrap sm">
+              <span class="dial" style="--rot: -90deg"></span>
+              <input data-knob="delay" type="range" min="0" max="1" step="0.01" value="0.05" aria-label="Delay" />
+              <em>DELAY</em>
+            </label>
+            <label class="knob-wrap sm">
+              <span class="dial" style="--rot: -70deg"></span>
+              <input data-knob="reverb" type="range" min="0" max="1" step="0.01" value="0.16" aria-label="Reverb" />
+              <em>REVERB</em>
+            </label>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <select id="style" class="ghost-btn" aria-label="Phrase style">
+              <option value="piano">piano</option>
+              <option value="rave">rave</option>
+              <option value="house">house</option>
+              <option value="techno">techno</option>
+              <option value="garage">garage</option>
+            </select>
+            <button id="bars" class="ghost-btn" type="button"><span id="bars-label">4 BAR</span></button>
+            <button id="generate" class="generate" type="button">Generate</button>
+            <button id="export" class="ghost-btn" type="button">Export MIDI</button>
+            <span id="style-label" class="sr-only">piano</span>
+          </div>
+
+          <div id="lesson-strip" class="lesson-strip" aria-live="polite">
+            <span id="lesson-pill" class="pill next">NEXT</span>
+            <span id="lesson-next" class="duet-notes">Ask me to teach</span>
+            <span id="lesson-progress" class="duet-mid">NO LESSON</span>
+            <span id="lesson-hits" class="lesson-hits">0 / 0</span>
+          </div>
+          <div id="duet-strip" class="duet-strip" aria-live="polite">
+            <span id="you-pill" class="pill you">YOU</span>
+            <span id="you-notes" class="duet-notes">—</span>
+            <span class="duet-mid">SAME KEYS</span>
+            <span id="agent-pill" class="pill agent">AGENT</span>
+            <span id="agent-notes" class="duet-notes">—</span>
+          </div>
+          <div id="phrase-roll" class="roll" aria-label="Phrase roll"></div>
+          <p class="mt-3 text-[10px] tracking-[0.16em] text-[#7c838a]">
+            Cyan = play this next · amber = you · green = agent · A–' / Z–M · Web MIDI · sustain CC64
+          </p>
+          <div id="piano" class="piano" role="group" aria-label="Virtual piano"></div>
+        </div>
+      </section>
+
+      <aside class="agent-panel" aria-label="Piano teacher">
+        <p class="text-[10px] tracking-[0.3em] text-amber">YOUR TEACHER IS ON THE KEYS</p>
+        <h2 class="font-display text-2xl mt-1">Never guess the next note</h2>
+        <p class="mt-2 text-[12px] leading-relaxed text-[#b9bfc4]">
+          I glow it. You play it. I hear you here — then the next key lights. A chat in another tab cannot do that.
+        </p>
+        <p id="lesson-coach" class="take-line">Press teach me. Your first note is already waiting.</p>
+        <p class="take-line">Last take <span id="take-notes">—</span></p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button class="chip" data-recipe="teach me" type="button">teach me</button>
+          <button class="chip" data-recipe="C scale" type="button">C scale</button>
+          <button class="chip" data-recipe="C chord" type="button">C chord</button>
+          <button class="chip" data-recipe="Twinkle" type="button">Twinkle</button>
+          <button id="next-chip" class="chip" data-recipe="show next" type="button">show next</button>
+          <button class="chip" data-recipe="hear it" type="button">hear it</button>
+          <button class="chip" data-recipe="stop lesson" type="button">stop lesson</button>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button class="chip" data-recipe="harmonize" type="button">harmonize</button>
+          <button class="chip" data-recipe="answer me" type="button">answer me</button>
+          <button id="follow-chip" class="chip" data-recipe="follow me" type="button">follow me</button>
+          <button class="chip" data-recipe="what do you hear" type="button">what do you hear</button>
+        </div>
+        <div id="agent-log" class="agent-log" aria-live="polite"></div>
+        <form id="agent-form" class="mt-3 flex gap-2">
+          <input id="agent-input" class="agent-input" placeholder="Teach me piano…" aria-label="Ask the teacher" />
+          <button class="generate sm" type="submit">Go</button>
+        </form>
+      </aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

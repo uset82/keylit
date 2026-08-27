@@ -1,0 +1,23 @@
+{
+  "name": "keybed",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mcp-b/webmcp-polyfill": "^5.0.1",
+    "smplr": "^1.0.0"
+  },
+  "devDependencies": {
+    "@mcp-b/webmcp-types": "^5.0.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
+  }
+}
