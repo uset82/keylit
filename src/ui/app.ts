@@ -208,7 +208,10 @@ const revealKeybed = (): void => {
 const panKeybed = (direction: 1 | -1): void => {
   const bed = keybed();
   if (!bed) return;
-  bed.scrollBy({ left: (direction * bed.scrollWidth) / 3, behavior: "smooth" });
+  // Step by most of a screenful, not a third of the whole bed. scrollWidth/3 is
+  // ~7 keys on a phone — more than is visible — so it skipped past keys you had
+  // never seen. Overlapping by 20% keeps your place.
+  bed.scrollBy({ left: direction * bed.clientWidth * 0.8, behavior: "smooth" });
 };
 
 const syncPanButtons = (): void => {
@@ -216,6 +219,11 @@ const syncPanButtons = (): void => {
   const idle = !bed || bedOverflow(bed) <= 1;
   document.querySelector("#pan-left")?.classList.toggle("hidden-pan", idle);
   document.querySelector("#pan-right")?.classList.toggle("hidden-pan", idle);
+  // The scrollbar is hidden by design, so the edge fades are the only cue that
+  // more keys exist off-screen.
+  if (!bed) return;
+  bed.classList.toggle("can-pan-left", !idle && bed.scrollLeft > 2);
+  bed.classList.toggle("can-pan-right", !idle && bed.scrollLeft < bedOverflow(bed) - 2);
 };
 
 const renderMessages = (): void => {
@@ -337,6 +345,7 @@ const updateView = (): void => {
   document.querySelector("#lesson-pill")?.classList.toggle("live", teaching);
   document.querySelector("#piano")?.classList.toggle("show-names", state.noteNames);
   document.querySelector("#note-names")?.classList.toggle("live", state.noteNames);
+  document.querySelector("#audio-blocked")?.classList.toggle("hidden", !state.audioBlocked);
   document.querySelectorAll<HTMLInputElement>("[data-knob]").forEach((input) => {
     const key = input.dataset.knob;
     if (!key) return;
@@ -519,6 +528,11 @@ export const mountApp = (): void => {
     const value = (event.target as HTMLSelectElement).value as PhraseStyle;
     patchState({ style: value });
   });
+  // Tapping the banner is itself a fresh user gesture, which is exactly what a
+  // suspended iOS context needs to resume.
+  document.querySelector("#audio-blocked")?.addEventListener("click", () => {
+    void ensureAudio();
+  });
   document.querySelector("#note-names")?.addEventListener("click", () => {
     patchState({ noteNames: !state.noteNames });
   });
@@ -527,8 +541,13 @@ export const mountApp = (): void => {
   const bed = keybed();
   // Fires once on observe, so it also covers first layout — the bed's width is
   // not known until the chassis has been laid out.
-  if (bed) new ResizeObserver(syncPanButtons).observe(bed);
-  else window.addEventListener("resize", syncPanButtons);
+  if (bed) {
+    new ResizeObserver(syncPanButtons).observe(bed);
+    // Keeps the edge fades honest as the user swipes the bed.
+    bed.addEventListener("scroll", syncPanButtons, { passive: true });
+  } else {
+    window.addEventListener("resize", syncPanButtons);
+  }
   document.querySelector("#bars")?.addEventListener("click", () => {
     patchState({ bars: state.bars === 4 ? 8 : 4 });
   });

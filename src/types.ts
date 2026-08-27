@@ -122,6 +122,8 @@ export type InstrumentState = {
   sustain: boolean;
   /** Beginner mode: letter every white key. On by default. */
   noteNames: boolean;
+  /** Context exists but is not running — iOS silent switch or a lost gesture. */
+  audioBlocked: boolean;
 };
 
 export type SampleEngineStatus = "idle" | "loading" | "sampled" | "fallback";

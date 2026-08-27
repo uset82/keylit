@@ -57,6 +57,7 @@ export const state: InstrumentState = {
   loadProgress: null,
   sustain: false,
   noteNames: true,
+  audioBlocked: false,
 };
 
 export const subscribe = (listener: () => void): (() => void) => {
