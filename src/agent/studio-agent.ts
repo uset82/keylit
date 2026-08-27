@@ -202,6 +202,7 @@ const humanizeToolText = (raw: string): string => {
   if (!trimmed.startsWith("{")) return raw;
   try {
     const parsed = JSON.parse(trimmed) as {
+      content?: Array<{ text?: string }>;
       line?: string;
       stepCoach?: string | null;
       nextNames?: string;
@@ -209,6 +210,9 @@ const humanizeToolText = (raw: string): string => {
       hint?: string;
       teaching?: boolean;
     };
+    if (Array.isArray(parsed.content)) {
+      return humanizeToolText(parsed.content.map((item) => item.text ?? "").join("\n"));
+    }
     if (parsed.line || parsed.stepCoach || parsed.teaching === false) {
       return [parsed.line, parsed.stepCoach, parsed.nextNames && parsed.nextNames !== "—" ? `Next: ${parsed.nextNames}` : "", parsed.hint]
         .filter((part) => Boolean(part))
