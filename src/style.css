@@ -1938,7 +1938,10 @@ body[data-mode="teach"] .dj-only { display: none !important; }
     box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
   }
 
-  .chat-coach { min-width: 0; font-size: 13px; }
+  /* Takes the whole row so the quit button wraps beneath it. Sharing a line in
+     a column this narrow squeezes the coach text into a six-line ribbon, and
+     that line is the one instruction the player is actually reading. */
+  .chat-coach { flex: 1 1 100%; min-width: 0; font-size: 13px; }
 
   /* The whole point of the column: the transcript takes every row the rows
      above it did not claim, and scrolls inside itself rather than pushing the
@@ -2184,6 +2187,11 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   .chat-head { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .chat-head::-webkit-scrollbar { display: none; }
   .chat-head .chat-pill { display: none; }
+
+  /* nowrap on the head alone is not enough: the tools group is itself a flex
+     row that would shrink and wrap internally, costing a second row. */
+  .chat-head-tools { flex: 0 0 auto; flex-wrap: nowrap; }
+  .chat-head > * { flex: 0 0 auto; }
 
   /* Third wordmark, inside the rack. The chassis is identifiable without it. */
   .rack-face > .flex > .logo-plaque { display: none; }
