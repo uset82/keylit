@@ -52,7 +52,7 @@
   --lcd-bg:#c3e02a;    --lcd-bg-2:#a5c41c;  --lcd-ink:#2c3a08;
 
   /* form + motion */
-  --r-chassis:16px; --r-key:3px;
+  --r-chassis:16px; --r-key:3px; --r-tile:22px;
   --t-key:70ms; --t-ui:170ms;
   --ease-key:cubic-bezier(.2,.8,.3,1);
   --ease-out:cubic-bezier(.22,1,.36,1);
@@ -1448,10 +1448,6 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   background: linear-gradient(180deg, #383c42 0%, #1e2124 100%);
 }
 
-.intro-head {
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--well-line);
-}
 
 .intro-plaque-wrap {
   display: flex;
@@ -1481,35 +1477,14 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   color: var(--label-dim);
 }
 
-.intro-lede {
-  max-width: 60ch;
-  margin-top: 14px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #b9bfc4;
-}
 
-.intro-lede em {
-  font-style: normal;
-  color: rgb(var(--next));
-  font-weight: 600;
-}
 
-.intro-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 22px;
-  margin-top: 16px;
-  font-size: 10px;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--label-dim);
-}
 
-.intro-legend li { display: flex; align-items: center; gap: 8px; }
 
 /* Pilot Lamp Swatches */
 .swatch {
+  /* Without flex-basis a flex row squashes these to slivers. */
+  flex: 0 0 auto;
   width: 10px;
   height: 10px;
   border-radius: 99px;
@@ -1526,258 +1501,45 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 /* ── Mode chooser ────────────────────────────────────────────────────────────
    The first decision on the page. Two cards, because a child picking "make a
    track" should never have to scroll past twelve lessons to find it. */
-.mode-pick {
-  margin-top: 22px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
 
-.mode-card {
-  --sig: var(--next);
-  position: relative;
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  padding: 16px 18px 15px;
-  text-align: left;
-  border-radius: 8px;
-  border: 1px solid var(--well-line);
-  background: linear-gradient(180deg, #22262b 0%, #171a1e 55%, #101317 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 3px 8px rgba(0,0,0,.6);
-  cursor: pointer;
-  transition: border-color var(--t-ui), box-shadow var(--t-ui), transform var(--t-ui);
-}
 
-.mode-card.dj { --sig: 255,79,193; }
 
-.mode-card:hover { transform: translateY(-1px); border-color: rgba(var(--sig),.6); }
 
-.mode-card[aria-pressed="true"] {
-  border-color: rgba(var(--sig),.8);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 18px rgba(var(--sig),.24), 0 3px 8px rgba(0,0,0,.6);
-}
 
-.mode-card-led {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  width: 8px;
-  height: 8px;
-  border-radius: 99px;
-  border: 1px solid rgba(0,0,0,.9);
-  background: #25282c;
-  box-shadow: inset 0 1px 1px rgba(0,0,0,.8);
-}
 
-.mode-card[aria-pressed="true"] .mode-card-led,
-.mode-card:hover .mode-card-led {
-  background: rgb(var(--sig));
-  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), 0 0 9px rgba(var(--sig),.9);
-}
 
-.mode-card em {
-  font-style: normal;
-  font-family: Tektur, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .24em;
-  color: rgba(var(--sig),.85);
-}
 
-.mode-card strong {
-  font-family: Syne, sans-serif;
-  font-size: 19px;
-  font-weight: 800;
-  color: #f1ede4;
-}
 
-.mode-card > span:last-child {
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--label);
-}
 
-.dj-list {
-  display: grid;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--label);
-}
 
-.dj-list strong { color: #f1ede4; }
 
-.dj-note {
-  margin-top: 12px;
-  font-size: 10px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--label-dim);
-}
 
 /* Bank sections */
-.intro-pick { margin-top: 22px; }
 
-.console-bank {
-  background: var(--well);
-  padding: 14px 16px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--well-line);
-  box-shadow: inset 0 2px 8px rgba(0,0,0,.7);
-}
 
-.bank-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
 
-.intro-kicker {
-  font-family: Tektur, sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .25em;
-  text-transform: uppercase;
-  color: var(--label);
-}
 
-.intro-kicker span { color: #f1ede4; }
 
-.bank-count {
-  font-size: 9px;
-  letter-spacing: .2em;
-  color: var(--label-dim);
-}
 
 /* auto-fit rather than a fixed 5, because the banks are no longer all the same
    size: First steps has six tiles and each tier has three. */
-.intro-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
-  gap: 10px;
-}
 
 /* Tactile Console Push-Buttons */
-.lesson-tile {
-  display: grid;
-  align-content: start;
-  gap: 5px;
-  padding: 11px 12px 10px;
-  text-align: left;
-  border: 1px solid var(--chassis-edge);
-  border-radius: 6px;
-  background: linear-gradient(180deg, #2c3035 0%, #1b1d20 50%, #121416 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.14),
-    inset 0 -1px 0 rgba(0,0,0,.9),
-    0 2px 5px rgba(0,0,0,.6);
-  transition: border-color var(--t-ui), background var(--t-ui), transform 70ms var(--ease-key), box-shadow 70ms;
-  cursor: pointer;
-}
 
-.tile-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
-.tile-num {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: .12em;
-  color: var(--label-dim);
-}
 
-.tile-led {
-  width: 7px;
-  height: 7px;
-  border-radius: 99px;
-  border: 1px solid rgba(0,0,0,.9);
-  background: #25282c;
-  box-shadow: inset 0 1px 1px rgba(0,0,0,.8);
-  transition: background var(--t-ui), box-shadow var(--t-ui);
-}
 
-.tile-led.cyan   { --led-hue: var(--next); }
-.tile-led.amber  { --led-hue: var(--you); }
-.tile-led.gold   { --led-hue: var(--you); }
-.tile-led.violet { --led-hue: var(--landmark); }
 
-.lesson-tile:hover .tile-led {
-  background: rgb(var(--led-hue));
-  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), 0 0 8px rgba(var(--led-hue), .9);
-}
 
-.lesson-tile em {
-  font-style: normal;
-  font-family: Tektur, sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .04em;
-  color: var(--text);
-  line-height: 1.25;
-}
 
-.lesson-tile span {
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--label-dim);
-}
 
-.lesson-tile:hover {
-  border-color: var(--hairline);
-  background: linear-gradient(180deg, #363b42 0%, #22252a 50%, #16181b 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.22),
-    inset 0 -1px 0 rgba(0,0,0,.9),
-    0 3px 8px rgba(0,0,0,.7);
-}
 
-.lesson-tile:hover em { color: #fff; }
-.lesson-tile:hover span { color: var(--label); }
 
-.lesson-tile:active {
-  transform: translateY(2px);
-  background: linear-gradient(180deg, #151719 0%, #1f2226 100%);
-  box-shadow:
-    inset 0 2px 5px rgba(0,0,0,.8),
-    0 1px 2px rgba(0,0,0,.4);
-}
 
-.lesson-tile:focus-visible {
-  outline: 2px solid var(--led-green);
-  outline-offset: 2px;
-}
 
-/* Featured Hero Preset (Happy Birthday) */
-.lesson-tile.hero {
-  border-color: rgba(var(--you),.35);
-  background: linear-gradient(180deg, #332b1d 0%, #1f1b13 50%, #14110b 100%);
-}
 
-.lesson-tile.hero em { color: #f6dc90; }
 
-.lesson-tile.hero:hover {
-  border-color: rgba(var(--you),.75);
-  background: linear-gradient(180deg, #423824 0%, #292418 50%, #1a160d 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.2),
-    0 0 16px rgba(var(--you),.3),
-    0 3px 8px rgba(0,0,0,.7);
-}
 
-.intro-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--well-line);
-}
 
 .generate.lg {
   display: inline-flex;
@@ -1805,13 +1567,6 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   box-shadow: 0 0 8px #fff;
 }
 
-.intro-note {
-  flex: 1;
-  min-width: 200px;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--label-dim);
-}
 
 /* ============================================================
    CELEBRATION MODAL — Studio Tally Plaque & Filament Lamps
@@ -2039,9 +1794,6 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 
 @media (max-width: 700px) {
   .intro-card { padding: 24px 20px 22px; }
-  .intro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mode-pick { grid-template-columns: minmax(0, 1fr); }
-  .mode-card strong { font-size: 17px; }
   .intro-actions { margin-top: 22px; }
 }
 
@@ -2245,15 +1997,14 @@ body[data-mode="teach"] .dj-only { display: none !important; }
     padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
   }
 
-  /* The mode choice and "Start playing" both have to sit above the fold; the
-     twelve lesson tiles are what the user scrolls for. */
+  /* "Start playing" has to sit above the fold; the lesson tiles are what the
+     user scrolls for. The mode switch now rides inside .intro-head. */
   .intro-card { display: flex; flex-direction: column; padding: 18px 16px 16px; }
   .intro-head    { order: 1; }
-  .mode-pick     { order: 2; margin-top: 16px; }
+  .intro-lede    { order: 2; }
   .intro-actions { order: 3; margin-top: 16px; }
-  .intro-pick    { order: 4; margin-top: 18px; }
-  .intro-title { font-size: 40px; }
-  .intro-legend { font-size: 11px; }
+  .intro-legend  { order: 4; font-size: 10px; }
+  .intro-pick    { order: 5; margin-top: 18px; }
 }
 
 /* --- landscape phone: the orientation a keyboard actually wants ----------
@@ -2296,6 +2047,363 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   .keybed-scroll { margin: 6px -12px 0; }
   .keybed-bar { margin-top: 4px; }
   .keybed-tools .mini { min-height: 40px; min-width: 40px; padding: 8px; }
+}
+
+/* ============================================================
+   FRONT PAGE — luminous glass bento
+   One composition, not four boxed grids. Size encodes importance:
+   the eye lands on "Find any C", then the duet, then everything else.
+   Colour is the app's own signal palette, so a tile's hue already means
+   something on the keys rather than being decorative.
+   ============================================================ */
+
+.intro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+}
+
+.intro-lede {
+  margin-top: 14px;
+  max-width: 62ch;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.55;
+  color: #b9c0c8;
+}
+
+.intro-lede em { font-style: normal; color: rgb(var(--next)); }
+
+.intro-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--glass-border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+}
+
+/* The swatch is a <span>: without this the li is not a flex container, the span
+   stays inline, and width/height are silently ignored — it renders as a sliver. */
+.intro-legend li { display: flex; align-items: center; gap: 8px; }
+
+.intro-pick { margin-top: 20px; }
+
+/* ---- the grid ---- */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: minmax(112px, auto);
+  gap: 14px;
+}
+
+/* Default: a quarter of the row. Spans are the only thing that varies. */
+.bento-tile { grid-column: span 3; }
+.bento-tile.is-hero,
+.bento-tile.is-featured { grid-column: span 6; grid-row: span 2; }
+.bento-tile.is-wide { grid-column: span 12; }
+
+/* ---- the glass ---- */
+
+.bento-tile {
+  --sig: var(--next);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;                    /* bounds the blur and the blooms */
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 16px 18px 18px;
+  text-align: left;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-tile);
+  color: inherit;
+  background:
+    radial-gradient(120% 90% at 18% -12%, rgba(var(--sig), .24), transparent 62%),
+    linear-gradient(158deg, rgba(255,255,255,.075), rgba(255,255,255,.012) 44%),
+    var(--glass-bg-card);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-border-bright),
+    inset 0 -34px 60px -44px rgba(var(--sig), .6),
+    0 22px 46px -24px rgba(0,0,0,.85);
+  transition:
+    transform 220ms var(--ease-out),
+    border-color var(--t-ui),
+    box-shadow 260ms var(--ease-out);
+  animation: tile-rise 520ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 26ms);
+}
+
+button.bento-tile { cursor: pointer; }
+
+/* The outer bloom cannot be a box-shadow — overflow:hidden clips it — so it is
+   an inset layer that reads as light pooling inside the glass. */
+.bento-tile::before {
+  content: "";
+  position: absolute;
+  inset: -40% -20% auto -20%;
+  height: 90%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(var(--sig), .34), transparent 70%);
+  filter: blur(26px);
+  opacity: .85;
+  transition: opacity 260ms var(--ease-out), transform 420ms var(--ease-out);
+}
+
+/* The abstract diagram, embedded IN the glass: geometry only, never an icon. */
+.bento-tile::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 52%;
+  height: 46%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .3;
+  mix-blend-mode: screen;
+  background-repeat: no-repeat;
+  /* Fades out toward the label. The reference is explicit that text must stay
+     clear of the internal graphic, and without this the bars run through it. */
+  -webkit-mask-image: linear-gradient(105deg, transparent 0%, #000 55%);
+  mask-image: linear-gradient(105deg, transparent 0%, #000 55%);
+  transition: opacity 260ms var(--ease-out);
+}
+
+.bento-tile:hover,
+.bento-tile:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(var(--sig), .55);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),
+    inset 0 -34px 60px -40px rgba(var(--sig), .8),
+    0 30px 60px -22px rgba(0,0,0,.9);
+}
+
+.bento-tile:hover::before { opacity: 1; transform: translateY(8%); }
+.bento-tile:hover::after { opacity: .5; }
+.bento-tile:focus-visible { outline: 2px solid rgba(var(--sig), .9); outline-offset: 3px; }
+.bento-tile:active { transform: translateY(-1px); }
+
+/* ---- type inside a tile ---- */
+
+.tile-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .18em;
+}
+
+.tile-num { font-style: normal; color: rgba(var(--sig), .95); }
+
+.tile-tier {
+  font-style: normal;
+  color: var(--label-dim);
+  padding: 2px 7px;
+  border: 1px solid rgba(var(--sig), .28);
+  border-radius: 99px;
+  background: rgba(var(--sig), .07);
+}
+
+.bento-tile em {
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: #f4f7fa;
+}
+
+.tile-say {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #a8b0b9;
+  max-width: 46ch;
+}
+
+/* The two dominant tiles get the brand face and room to breathe. */
+.bento-tile.is-hero em,
+.bento-tile.is-featured em {
+  font-family: var(--font-brand);
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -.02em;
+  margin-top: 4px;
+}
+
+.bento-tile.is-hero .tile-say,
+.bento-tile.is-featured .tile-say { font-size: 14px; max-width: 30ch; }
+.bento-tile.is-hero,
+.bento-tile.is-featured { padding: 20px 22px 22px; }
+.bento-tile.is-hero::after,
+.bento-tile.is-featured::after { width: 46%; height: 66%; opacity: .34; }
+
+/* ---- semantic families ----
+   Reusing the signal palette the keys already speak: cyan = play this next,
+   green = your teacher, amber = you, violet = look here. */
+
+.fam-start { --sig: var(--next); }
+.fam-basic { --sig: var(--agent); }
+.fam-mid   { --sig: var(--you); }
+.fam-adv   { --sig: var(--landmark); }
+.fam-duet  { --sig: 255,120,150; }
+.fam-dj    { --sig: 255,79,193; }
+
+/* ---- the diagrams ----
+   Each explains its lesson by composition. No icons, no emoji, no illustration. */
+
+/* two black keys, with C lit just to their left */
+[data-viz="groups"]::after {
+  background-image:
+    linear-gradient(90deg, rgba(var(--sig), .85) 0 14%, transparent 14%),
+    linear-gradient(90deg, transparent 0 34%, rgba(255,255,255,.5) 34% 44%, transparent 44%),
+    linear-gradient(90deg, transparent 0 54%, rgba(255,255,255,.5) 54% 64%, transparent 64%);
+  background-position: 0 100%, 0 100%, 0 100%;
+  background-size: 100% 62%, 100% 88%, 100% 88%;
+}
+
+/* three ascending steps */
+[data-viz="run"]::after {
+  background-image:
+    linear-gradient(90deg, rgba(var(--sig), .75) 0 18%, transparent 18%),
+    linear-gradient(90deg, transparent 0 28%, rgba(var(--sig), .6) 28% 46%, transparent 46%),
+    linear-gradient(90deg, transparent 0 56%, rgba(var(--sig), .45) 56% 74%, transparent 74%);
+  background-position: 0 100%, 0 100%, 0 100%;
+  background-size: 100% 46%, 100% 68%, 100% 92%;
+}
+
+/* five fingers, middle tallest */
+[data-viz="hand"]::after {
+  background-image:
+    linear-gradient(90deg, rgba(var(--sig), .5) 0 12%, transparent 12%),
+    linear-gradient(90deg, transparent 0 20%, rgba(var(--sig), .65) 20% 32%, transparent 32%),
+    linear-gradient(90deg, transparent 0 40%, rgba(var(--sig), .85) 40% 52%, transparent 52%),
+    linear-gradient(90deg, transparent 0 60%, rgba(var(--sig), .65) 60% 72%, transparent 72%),
+    linear-gradient(90deg, transparent 0 80%, rgba(var(--sig), .5) 80% 92%, transparent 92%);
+  background-position: 0 100%;
+  background-size: 100% 52%, 100% 74%, 100% 96%, 100% 74%, 100% 52%;
+}
+
+/* the same hand, mirrored */
+[data-viz="mirror"]::after {
+  background-image:
+    linear-gradient(90deg, rgba(var(--sig), .85) 0 12%, transparent 12%),
+    linear-gradient(90deg, transparent 0 20%, rgba(var(--sig), .65) 20% 32%, transparent 32%),
+    linear-gradient(90deg, transparent 0 40%, rgba(var(--sig), .5) 40% 52%, transparent 52%),
+    linear-gradient(90deg, transparent 0 60%, rgba(var(--sig), .4) 60% 72%, transparent 72%),
+    linear-gradient(90deg, transparent 0 80%, rgba(var(--sig), .3) 80% 92%, transparent 92%);
+  background-position: 0 100%;
+  background-size: 100% 96%, 100% 74%, 100% 58%, 100% 46%, 100% 36%;
+}
+
+/* two clusters an octave apart */
+[data-viz="pair"]::after {
+  background-image:
+    linear-gradient(90deg, rgba(var(--sig), .7) 0 8%, transparent 8%),
+    linear-gradient(90deg, transparent 0 14%, rgba(var(--sig), .5) 14% 22%, transparent 22%),
+    linear-gradient(90deg, transparent 0 62%, rgba(var(--sig), .5) 62% 70%, transparent 70%),
+    linear-gradient(90deg, transparent 0 76%, rgba(var(--sig), .7) 76% 84%, transparent 84%);
+  background-position: 0 100%;
+  background-size: 100% 84%, 100% 62%, 100% 62%, 100% 84%;
+}
+
+/* three notes stacked into one chord */
+[data-viz="stack"]::after {
+  background-image:
+    radial-gradient(circle at 26% 74%, rgba(var(--sig), .55) 0 14%, transparent 15%),
+    radial-gradient(circle at 46% 54%, rgba(var(--sig), .45) 0 14%, transparent 15%),
+    radial-gradient(circle at 66% 34%, rgba(var(--sig), .35) 0 14%, transparent 15%);
+  background-size: 100% 100%;
+}
+
+/* a melodic line */
+[data-viz="wave"]::after {
+  background-image:
+    radial-gradient(ellipse 42% 60% at 10% 78%, rgba(var(--sig), .45), transparent 62%),
+    radial-gradient(ellipse 40% 58% at 44% 34%, rgba(var(--sig), .38), transparent 62%),
+    radial-gradient(ellipse 42% 60% at 82% 66%, rgba(var(--sig), .32), transparent 62%);
+  background-size: 100% 100%;
+}
+
+/* two lines, interleaved — the duet */
+[data-viz="duet"]::after {
+  background-image:
+    radial-gradient(ellipse 38% 46% at 18% 32%, rgba(var(--sig), .45), transparent 64%),
+    radial-gradient(ellipse 38% 46% at 50% 70%, rgba(var(--agent), .34), transparent 64%),
+    radial-gradient(ellipse 38% 46% at 82% 30%, rgba(var(--sig), .38), transparent 64%);
+  background-size: 100% 100%;
+}
+
+/* ---- mode switch inside the overlay ---- */
+
+.intro-head .mode-switch { padding: 4px; }
+.intro-head .mode-switch .chip { padding: 9px 16px; font-size: 11px; }
+
+/* ---- closing action ---- */
+
+.intro-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.intro-note {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--label-dim);
+  max-width: 46ch;
+}
+
+@keyframes tile-rise {
+  from { translate: 0 14px; opacity: 0; }
+  to   { translate: 0 0;    opacity: 1; }
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 1000px) {
+  .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bento-tile { grid-column: span 3; }
+  .bento-tile.is-hero,
+  .bento-tile.is-featured { grid-column: span 6; grid-row: span 1; }
+  .bento-tile.is-wide { grid-column: span 6; }
+}
+
+@media (max-width: 640px) {
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .bento-tile { grid-column: span 1; padding: 13px 14px 15px; }
+  .bento-tile.is-hero,
+  .bento-tile.is-featured,
+  .bento-tile.is-wide { grid-column: span 2; }
+  .bento-tile.is-hero em,
+  .bento-tile.is-featured em { font-size: 24px; }
+  .bento-tile em { font-size: 14px; }
+  .tile-say { font-size: 11.5px; }
+  .bento-tile.is-hero .tile-say,
+  .bento-tile.is-featured .tile-say { font-size: 12.5px; }
+  /* Small tiles have no room for a diagram AND a label. */
+  .bento-tile:not(.is-hero):not(.is-featured):not(.is-wide)::after { opacity: .28; }
+  .intro-lede { font-size: 13.5px; }
 }
 
 /* keep last */

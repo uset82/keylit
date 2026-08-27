@@ -24,175 +24,168 @@
     <section id="intro" class="intro" aria-label="Welcome to KEYLIT">
       <div class="intro-card">
         <button id="intro-close-btn" class="intro-close" type="button" aria-label="Close console">✕</button>
-        
-        <div class="intro-head">
+
+        <header class="intro-head">
           <div class="intro-plaque-wrap">
             <p class="intro-plaque font-display"><span>KEYLIT</span></p>
-            <span class="intro-serial">STUDIO MASTER CONSOLE · REV 2.4</span>
+            <span class="intro-serial">LEARN PIANO · ONE LIVE PAGE</span>
           </div>
-          <p class="intro-lede">
-            The next key is already glowing. You play it — and your teacher hears you on
-            <em>this</em> page, then lights the one after. A chat in another tab cannot do that.
-          </p>
-          <ul class="intro-legend">
-            <li><span class="swatch next"></span>play this next</li>
-            <li><span class="swatch landmark"></span>look here</li>
-            <li><span class="swatch you"></span>you</li>
-            <li><span class="swatch agent"></span>your teacher</li>
-          </ul>
-        </div>
 
-        <div class="mode-pick" role="group" aria-label="Choose a mode">
-          <button class="mode-card" data-mode-pick="teach" type="button" aria-pressed="true">
-            <span class="mode-card-led"></span>
-            <em>TEACHING MODE</em>
-            <strong>Learn to play</strong>
-            <span>Nine songs and six warm-ups, basic to advanced. I light the next key and listen.</span>
-          </button>
-          <button class="mode-card dj" data-mode-pick="dj" type="button" aria-pressed="false">
-            <span class="mode-card-led"></span>
-            <em>DJ MODE</em>
-            <strong>Make a track</strong>
-            <span>Styles, FX knobs, generated loops, MIDI export. No lessons in the way.</span>
-          </button>
-        </div>
+          <div class="mode-switch" role="group" aria-label="Choose a mode">
+            <button class="chip" data-mode-pick="teach" type="button" aria-pressed="true">Learn to play</button>
+            <button class="chip" data-mode-pick="dj" type="button" aria-pressed="false">Make a track</button>
+          </div>
+        </header>
+
+        <p class="intro-lede">
+          The next key is already glowing. You play it — and your teacher hears you on
+          <em>this</em> page, then lights the one after.
+        </p>
+
+        <ul class="intro-legend">
+          <li><span class="swatch next"></span>play this next</li>
+          <li><span class="swatch landmark"></span>look here</li>
+          <li><span class="swatch you"></span>you</li>
+          <li><span class="swatch agent"></span>your teacher</li>
+        </ul>
 
         <div class="intro-pick teach-only">
-          <div class="console-bank">
-            <div class="bank-header">
-              <p class="intro-kicker"><span>FIRST STEPS</span> // FIND THE KEYS</p>
-              <span class="bank-count">6 DRILLS</span>
-            </div>
-            <div class="intro-grid">
-              <button class="lesson-tile" data-recipe="teach me" type="button">
-                <div class="tile-bar"><span class="tile-num">01</span><span class="tile-led cyan"></span></div>
-                <em>Find any C</em>
-                <span>C sits left of every group of 2.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="first keys" type="button">
-                <div class="tile-bar"><span class="tile-num">02</span><span class="tile-led cyan"></span></div>
-                <em>Play C D E</em>
-                <span>Three white keys in a row.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="finger numbers" type="button">
-                <div class="tile-bar"><span class="tile-num">03</span><span class="tile-led cyan"></span></div>
-                <em>Finger numbers</em>
-                <span>Thumb is 1. Little finger is 5.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="left hand" type="button">
-                <div class="tile-bar"><span class="tile-num">04</span><span class="tile-led cyan"></span></div>
-                <em>Left hand</em>
-                <span>The same five fingers, mirrored.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="both hands" type="button">
-                <div class="tile-bar"><span class="tile-num">05</span><span class="tile-led cyan"></span></div>
-                <em>Both hands</em>
-                <span>Low C and middle C together.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="C chord" type="button">
-                <div class="tile-bar"><span class="tile-num">06</span><span class="tile-led cyan"></span></div>
-                <em>C major chord</em>
-                <span>C, E, G — then hold all three.</span>
-              </button>
-            </div>
-          </div>
+          <div class="bento">
+            <button class="bento-tile is-hero fam-start" data-recipe="teach me" type="button" style="--i:0" data-viz="groups">
+              <span class="tile-meta"><i class="tile-num">01</i><i class="tile-tier">START HERE</i></span>
+              <em>Find any C</em>
+              <span class="tile-say">Black keys come in twos and threes. C hides just left of every group of two — that is how you find any note, on any piano.</span>
+            </button>
 
-          <div class="console-bank mt-5" data-tier="basic">
-            <div class="bank-header">
-              <p class="intro-kicker"><span>TIER 1</span> // BASIC</p>
-              <span class="bank-count">RIGHT HAND · NO CLOCK</span>
-            </div>
-            <div class="intro-grid">
-              <button class="lesson-tile" data-recipe="hot cross buns" type="button">
-                <div class="tile-bar"><span class="tile-num">07</span><span class="tile-led cyan"></span></div>
-                <em>Hot Cross Buns</em>
-                <span>Three keys, three fingers. Everyone's first song.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="mary had a little lamb" type="button">
-                <div class="tile-bar"><span class="tile-num">08</span><span class="tile-led cyan"></span></div>
-                <em>Mary Had a Little Lamb</em>
-                <span>Adds G, so all five fingers get a turn.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="Twinkle" type="button">
-                <div class="tile-bar"><span class="tile-num">09</span><span class="tile-led cyan"></span></div>
-                <em>Twinkle Twinkle</em>
-                <span>The tune everybody knows, C up to G.</span>
-              </button>
-            </div>
-          </div>
+            <button class="bento-tile fam-start" data-recipe="first keys" type="button" style="--i:1" data-viz="run">
+              <span class="tile-meta"><i class="tile-num">02</i><i class="tile-tier">FIRST STEPS</i></span>
+              <em>Play C D E</em>
+              <span class="tile-say">Three white keys in a row.</span>
+            </button>
 
-          <div class="console-bank mt-5" data-tier="intermediate">
-            <div class="bank-header">
-              <p class="intro-kicker"><span>TIER 2</span> // INTERMEDIATE</p>
-              <span class="bank-count">BOTH HANDS · METRONOME</span>
-            </div>
-            <div class="intro-grid">
-              <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
-                <div class="tile-bar"><span class="tile-num">10</span><span class="tile-led amber"></span></div>
-                <em>Ode to Joy</em>
-                <span>Beethoven's phrase, with a left-hand root under it.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="Happy Birthday" type="button">
-                <div class="tile-bar"><span class="tile-num">11</span><span class="tile-led amber"></span></div>
-                <em>Happy Birthday</em>
-                <span>The whole song, plus C, F and G in the left hand.</span>
-              </button>
-              <button class="lesson-tile hero" data-recipe="heart and soul" type="button">
-                <div class="tile-bar"><span class="tile-num gold">12</span><span class="tile-led gold"></span></div>
-                <em>Heart and Soul · duet</em>
-                <span>I play the backing loop. You play the melody. Together.</span>
-              </button>
-            </div>
-          </div>
+            <button class="bento-tile fam-start" data-recipe="finger numbers" type="button" style="--i:2" data-viz="hand">
+              <span class="tile-meta"><i class="tile-num">03</i><i class="tile-tier">FIRST STEPS</i></span>
+              <em>Finger numbers</em>
+              <span class="tile-say">Thumb is 1. Little finger is 5.</span>
+            </button>
 
-          <div class="console-bank mt-5" data-tier="advanced">
-            <div class="bank-header">
-              <p class="intro-kicker"><span>TIER 3</span> // ADVANCED</p>
-              <span class="bank-count">AT TEMPO · GLOW FADES</span>
-            </div>
-            <div class="intro-grid">
-              <button class="lesson-tile" data-recipe="C scale" type="button">
-                <div class="tile-bar"><span class="tile-num">13</span><span class="tile-led violet"></span></div>
-                <em>C major scale</em>
-                <span>Eight keys, five fingers — the thumb tucks under.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="chopsticks" type="button">
-                <div class="tile-bar"><span class="tile-num">14</span><span class="tile-led violet"></span></div>
-                <em>Chopsticks</em>
-                <span>Hands alternate. Fast, and instantly recognisable.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="fur elise" type="button">
-                <div class="tile-bar"><span class="tile-num">15</span><span class="tile-led violet"></span></div>
-                <em>Für Elise · opening</em>
-                <span>Your first black keys, at real tempo.</span>
-              </button>
-            </div>
+            <button class="bento-tile fam-start" data-recipe="left hand" type="button" style="--i:3" data-viz="mirror">
+              <span class="tile-meta"><i class="tile-num">04</i><i class="tile-tier">FIRST STEPS</i></span>
+              <em>Left hand</em>
+              <span class="tile-say">The same five fingers, mirrored.</span>
+            </button>
+
+            <button class="bento-tile fam-start" data-recipe="both hands" type="button" style="--i:4" data-viz="pair">
+              <span class="tile-meta"><i class="tile-num">05</i><i class="tile-tier">FIRST STEPS</i></span>
+              <em>Both hands</em>
+              <span class="tile-say">Low C and middle C together.</span>
+            </button>
+
+            <button class="bento-tile fam-start" data-recipe="C chord" type="button" style="--i:5" data-viz="stack">
+              <span class="tile-meta"><i class="tile-num">06</i><i class="tile-tier">FIRST STEPS</i></span>
+              <em>C major chord</em>
+              <span class="tile-say">C, E, G — then hold all three.</span>
+            </button>
+
+            <button class="bento-tile fam-basic" data-recipe="hot cross buns" type="button" style="--i:6" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">07</i><i class="tile-tier">BASIC</i></span>
+              <em>Hot Cross Buns</em>
+              <span class="tile-say">Three keys, three fingers. Everyone's first song.</span>
+            </button>
+
+            <button class="bento-tile fam-basic" data-recipe="mary had a little lamb" type="button" style="--i:7" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">08</i><i class="tile-tier">BASIC</i></span>
+              <em>Mary Had a Little Lamb</em>
+              <span class="tile-say">Adds G, so all five fingers get a turn.</span>
+            </button>
+
+            <button class="bento-tile fam-basic" data-recipe="Twinkle" type="button" style="--i:8" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">09</i><i class="tile-tier">BASIC</i></span>
+              <em>Twinkle Twinkle</em>
+              <span class="tile-say">The tune everybody knows, C up to G.</span>
+            </button>
+
+            <button class="bento-tile is-featured fam-duet" data-recipe="heart and soul" type="button" style="--i:9" data-viz="duet">
+              <span class="tile-meta"><i class="tile-num">12</i><i class="tile-tier">DUET</i></span>
+              <em>Heart and Soul</em>
+              <span class="tile-say">I play the backing loop. You play the melody. The one thing a chat in another tab can never do.</span>
+            </button>
+
+            <button class="bento-tile fam-mid" data-recipe="Ode to Joy" type="button" style="--i:10" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">10</i><i class="tile-tier">INTERMEDIATE</i></span>
+              <em>Ode to Joy</em>
+              <span class="tile-say">Beethoven's phrase, with a left-hand root under it.</span>
+            </button>
+
+            <button class="bento-tile fam-mid" data-recipe="Happy Birthday" type="button" style="--i:11" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">11</i><i class="tile-tier">INTERMEDIATE</i></span>
+              <em>Happy Birthday</em>
+              <span class="tile-say">The whole song, plus C, F and G in the left hand.</span>
+            </button>
+
+            <button class="bento-tile fam-adv" data-recipe="C scale" type="button" style="--i:12" data-viz="run">
+              <span class="tile-meta"><i class="tile-num">13</i><i class="tile-tier">ADVANCED</i></span>
+              <em>C major scale</em>
+              <span class="tile-say">Eight keys, five fingers — the thumb tucks under.</span>
+            </button>
+
+            <button class="bento-tile fam-adv" data-recipe="chopsticks" type="button" style="--i:13" data-viz="pair">
+              <span class="tile-meta"><i class="tile-num">14</i><i class="tile-tier">ADVANCED</i></span>
+              <em>Chopsticks</em>
+              <span class="tile-say">Hands alternate. Fast, and instantly recognisable.</span>
+            </button>
+
+            <button class="bento-tile is-wide fam-adv" data-recipe="fur elise" type="button" style="--i:14" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">15</i><i class="tile-tier">ADVANCED</i></span>
+              <em>Für Elise · opening</em>
+              <span class="tile-say">Your first black keys, at real tempo.</span>
+            </button>
           </div>
         </div>
 
         <div class="intro-pick dj-only">
-          <div class="console-bank">
-            <div class="bank-header">
-              <p class="intro-kicker"><span>DECKS</span> // WHAT YOU GET</p>
-              <span class="bank-count">STUDIO OPEN</span>
+          <div class="bento">
+            <div class="bento-tile is-hero fam-dj" data-viz="wave">
+              <span class="tile-meta"><i class="tile-tier">DECKS</i></span>
+              <em>Make a track</em>
+              <span class="tile-say">Five styles — piano, rave, house, techno, garage. Generate 4 or 8 bars and play over the loop.</span>
             </div>
-            <ul class="dj-list">
-              <li><strong>Five styles</strong> — piano, rave, house, techno, garage. Generate 4 or 8 bars and play over the loop.</li>
-              <li><strong>FX knobs</strong> — filter, distortion, crush, delay, reverb, live on the whole rack.</li>
-              <li><strong>Two layers</strong> — stack a grand under strings, transpose either, lock one and browse the other.</li>
-              <li><strong>Tempo</strong> — drag BPM anywhere from 50 to 180, or just tell me "faster".</li>
-              <li><strong>Export MIDI</strong> — take the loop out to any DAW.</li>
-            </ul>
-            <p class="dj-note">Lessons are hidden while you are in DJ mode. Switch back any time with the teach / DJ toggle above the keys.</p>
+            <div class="bento-tile fam-dj" data-viz="hand">
+              <span class="tile-meta"><i class="tile-tier">RACK</i></span>
+              <em>FX knobs</em>
+              <span class="tile-say">Filter, distortion, crush, delay, reverb — live on the whole rack.</span>
+            </div>
+            <div class="bento-tile fam-dj" data-viz="stack">
+              <span class="tile-meta"><i class="tile-tier">RACK</i></span>
+              <em>Two layers</em>
+              <span class="tile-say">Stack a grand under strings, transpose either, lock one and browse the other.</span>
+            </div>
+            <div class="bento-tile fam-dj" data-viz="run">
+              <span class="tile-meta"><i class="tile-tier">CLOCK</i></span>
+              <em>Tempo</em>
+              <span class="tile-say">50 to 180 BPM, or just tell me "faster".</span>
+            </div>
+            <div class="bento-tile fam-dj" data-viz="mirror">
+              <span class="tile-meta"><i class="tile-tier">OUT</i></span>
+              <em>Export MIDI</em>
+              <span class="tile-say">Take the loop out to any DAW.</span>
+            </div>
+            <div class="bento-tile is-wide fam-dj" data-viz="duet">
+              <span class="tile-meta"><i class="tile-tier">NOTE</i></span>
+              <em>Lessons stay hidden here</em>
+              <span class="tile-say">Switch back any time with the toggle above the keys.</span>
+            </div>
           </div>
         </div>
 
+        <!-- Outside both mode wrappers: DJ mode hides .teach-only, and the only
+             way to arm the audio must never be the thing that disappears. -->
         <div class="intro-actions">
           <button id="intro-start" class="generate lg" type="button">
             <span class="pilot-dot"></span>
-            ENGAGE ENGINE · START PLAYING
+            START PLAYING
           </button>
-          <p class="intro-note">Arms Web Audio & auto-detects USB/Bluetooth MIDI. Select any preset or play freely.</p>
+          <p class="intro-note">Arms Web Audio and auto-detects USB/Bluetooth MIDI. Pick a lesson above, or just play.</p>
         </div>
       </div>
     </section>
