@@ -1,6 +1,6 @@
 import { playPhrase } from "../engine/audio";
 import { generatePhrase } from "../engine/generate";
-import { applySoundPatch } from "../engine/patch";
+import { applySoundPatch, type SoundPatch } from "../engine/patch";
 import { patchState, setPhrase, state } from "../store";
 import type { PhraseStyle } from "../types";
 import { runTool } from "../webmcp/adapter";
@@ -334,12 +334,25 @@ export const runLessonTurn = async (id: string): Promise<string> => {
   }
 };
 
+/** Nouns that can only mean "make me something rhythmic" when typed at a piano. */
+const RHYTHM_WORDS = /\b(beats?|drums?|drumbeat|groove|rhythm|percussion|pattern)\b/;
+
+/** Weaker nouns, which need a verb alongside them to read as a request. */
+const PHRASE_WORDS = /\b(midi|notes?|melody|riff|arpeggio|bass ?line|chord progression|loop|phrase|hook|lick|tune)\b/;
+
+const CREATION_WORDS = /\b(create|generate|compose|write|make|build|custom|invent|arrange|cook up|lay down)\b/;
+
 const wantsCustomMidi = (prompt: string): boolean => {
   const lower = prompt.toLowerCase();
-  if (/\b(export|download)\b/.test(lower)) return false;
-  const musicalThing = /\b(midi(?: notes?)?|notes?|melody|riff|arpeggio|bassline|chord progression|loop|phrase)\b/.test(lower);
-  const creation = /\b(create|generate|compose|write|make|build|custom|invent|arrange)\b/.test(lower);
-  return musicalThing && creation;
+  if (/\b(export|download|save)\b/.test(lower)) return false;
+  // A rhythm noun carries its own intent, so it does not also need a verb.
+  // Demanding both is what sent "drum pattern", "give me a groove" and
+  // "generate some drum beats" to the generic hint: none of those three
+  // contains a word this used to recognise as musical at all.
+  if (RHYTHM_WORDS.test(lower)) return true;
+  // The weaker list still needs one, or "what notes do I play" — a question
+  // about the lesson in progress — would answer itself with a new jam.
+  return PHRASE_WORDS.test(lower) && CREATION_WORDS.test(lower);
 };
 
 const wantsInstrumentalTrack = (prompt: string): boolean =>
@@ -347,11 +360,13 @@ const wantsInstrumentalTrack = (prompt: string): boolean =>
 
 const styleFor = (prompt: string): PhraseStyle => {
   const lower = prompt.toLowerCase();
-  if (/\bhouse\b/.test(lower)) return "house";
-  if (/\btechno\b/.test(lower)) return "techno";
-  if (/\brave\b|\btrance\b/.test(lower)) return "rave";
-  if (/\bgarage\b|\b2-step\b/.test(lower)) return "garage";
-  return "piano";
+  if (/\bhouse\b|\bdisco\b/.test(lower)) return "house";
+  if (/\btechno\b|\bindustrial\b/.test(lower)) return "techno";
+  if (/\brave\b|\btrance\b|\bhardcore\b/.test(lower)) return "rave";
+  if (/\bgarage\b|\b2[- ]?step\b|\bhip ?hop\b|\btrap\b|\bdnb\b|\bjungle\b|\bbreak/.test(lower)) return "garage";
+  // Never answer a beat request with the piano voicings: they are sustained
+  // sevenths on every downbeat, which is a phrase but audibly not a groove.
+  return RHYTHM_WORDS.test(lower) ? "house" : "piano";
 };
 
 const barsFor = (prompt: string): 4 | 8 => (/\b8[ -]?bar|eight[ -]?bar\b/i.test(prompt) ? 8 : 4);
@@ -362,14 +377,38 @@ const applyGeneratedPhrase = (notes: typeof state.phrase, bars: 4 | 8, bpm?: num
   playPhrase(notes);
 };
 
-const fallbackMidi = (prompt: string): string => {
+/**
+ * Short, dry and bright, for when the ask was rhythmic.
+ *
+ * There is no drum kit in a rompler of nine pitched samples, so a beat here is
+ * stabs. On the factory Steinway, whose release runs half a second, four stabs
+ * to the bar overlap into one sustained chord — the notes are right and the
+ * rhythm is inaudible. Each hit has to stop before the next one lands.
+ */
+const BEAT_PATCH: SoundPatch = {
+  presetName: "BEAT STABS",
+  layerA: { sampleId: "sy-rail", volume: 0.9 },
+  layerB: { volume: 0 },
+  adsr: { attack: 0.001, decay: 0.18, sustain: 0.25, release: 0.16 },
+  fx: { filter: 0.82, distortion: 0.12, crush: 0.18, delay: 0.08, reverb: 0.1 },
+};
+
+const fallbackMidi = async (prompt: string): Promise<string> => {
   const style = styleFor(prompt);
   const bars = barsFor(prompt);
+  const rhythmic = RHYTHM_WORDS.test(prompt.toLowerCase());
+  if (rhythmic) await applySoundPatch(BEAT_PATCH);
   const phrase = generatePhrase(style, bars);
-  patchState({ style, bars, presetName: `${style.toUpperCase()} CUSTOM` });
+  // BEAT_PATCH already named the preset; leave it rather than overwrite it.
+  patchState({ style, bars, ...(rhythmic ? {} : { presetName: `${style.toUpperCase()} CUSTOM` }) });
   setPhrase(phrase);
   playPhrase(phrase);
-  return `I put a ${bars}-bar ${style} MIDI phrase on the roll. Play it, then use Export MIDI to keep it.`;
+  // Say plainly that these are not drums. A child who was promised a beat and
+  // hears a piano will decide the app is broken; one who is told it is a piano
+  // playing a groove hears exactly what was described.
+  return rhythmic
+    ? `No drum kit on a piano — so here is a ${bars}-bar ${style} groove, played as short stabs. Ask again for a new one, or Export MIDI to keep it.`
+    : `I put a ${bars}-bar ${style} MIDI phrase on the roll. Play it, then use Export MIDI to keep it.`;
 };
 
 const instrumentalFromWords = async (prompt: string): Promise<string> => {
@@ -406,7 +445,7 @@ const designFromWords = async (prompt: string): Promise<string> => {
     }
     if (!asksForMidi) return viaLlm.reply || `Sound built: ${state.presetName}. Play a key. Press Restore to undo.`;
 
-    const localPhrase = fallbackMidi(prompt);
+    const localPhrase = await fallbackMidi(prompt);
     return viaLlm.reply ? `${viaLlm.reply}\n\n${localPhrase}` : localPhrase;
   }
 
@@ -417,7 +456,7 @@ const designFromWords = async (prompt: string): Promise<string> => {
     soundReply = reply;
   }
   if (asksForMidi) {
-    const localPhrase = fallbackMidi(prompt);
+    const localPhrase = await fallbackMidi(prompt);
     return soundReply ? `${soundReply}\n\n${localPhrase}` : localPhrase;
   }
   return soundReply;
