@@ -41,27 +41,32 @@ assets.sort(([first], [second]) => first.localeCompare(second));
 const template = await readFile("src/site-worker.js", "utf8");
 
 /*
- * Inline the shared server module rather than importing it. Only one file gets
- * written (dist/server/index.js) and nothing bundles it, so a real import would
- * resolve to nothing once deployed. Stripping the `export ` keywords turns the
- * module into plain top-level declarations the worker can call directly, which
- * is why src/server/design.js is required to have no imports of its own.
+ * Inline the shared server modules rather than importing them. Only one worker
+ * file is written, so a real import would resolve to nothing once deployed.
  */
-const handlerSource = await readFile("src/server/design.js", "utf8");
-if (/^\s*import\s/m.test(handlerSource)) {
-  throw new Error("src/server/design.js must stay import-free: it is inlined into the Sites worker, not bundled");
-}
-const inlinedHandler = handlerSource.replace(/^export const /gm, "const ").replace(/^export /gm, "");
+const inlineServerModule = async (sourcePath) => {
+  const source = await readFile(sourcePath, "utf8");
+  if (/^\s*import\s/m.test(source)) {
+    throw new Error(`${sourcePath} must stay import-free: it is inlined into the Sites worker, not bundled`);
+  }
+  return source.replace(/^export const /gm, "const ").replace(/^export /gm, "");
+};
+const inlinedDesignHandler = await inlineServerModule("src/server/design.js");
+const inlinedMusicHandler = await inlineServerModule("src/server/music.js");
 
 let generated = template.replace("/*__SITES_ASSETS__*/", JSON.stringify(assets));
 if (generated === template) {
   throw new Error("Sites asset placeholder is missing from src/site-worker.js");
 }
-const withHandler = generated.replace("/*__DESIGN_HANDLER__*/", inlinedHandler);
-if (withHandler === generated) {
+const withDesignHandler = generated.replace("/*__DESIGN_HANDLER__*/", inlinedDesignHandler);
+if (withDesignHandler === generated) {
   throw new Error("Design handler placeholder is missing from src/site-worker.js");
 }
-generated = withHandler;
+const withMusicHandler = withDesignHandler.replace("/*__MUSIC_HANDLER__*/", inlinedMusicHandler);
+if (withMusicHandler === withDesignHandler) {
+  throw new Error("Music handler placeholder is missing from src/site-worker.js");
+}
+generated = withMusicHandler;
 
 await mkdir("dist/server", { recursive: true });
 await writeFile("dist/server/index.js", generated);

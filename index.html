@@ -214,7 +214,7 @@
         </div>
 
         <form id="agent-form" class="chat-form">
-          <input id="agent-input" class="agent-input" placeholder="Teach me piano, or describe a sound…" aria-label="Ask the teacher, or describe a sound to build" />
+          <input id="agent-input" class="agent-input" placeholder="Teach me, design a sound, or create MIDI…" aria-label="Ask the teacher, design a sound, or create a MIDI phrase" />
           <button class="generate sm" type="submit">Go</button>
           <button class="ghost-btn songs-btn" data-intro-open type="button" aria-label="Songs and lessons">Songs</button>
         </form>
@@ -249,6 +249,15 @@
           <summary>Transcript</summary>
           <div id="agent-log" class="agent-log" aria-live="polite"></div>
         </details>
+
+        <div id="music-result" class="music-result hidden" aria-live="polite">
+          <div class="music-result-copy">
+            <p class="music-result-kicker">INSTRUMENTAL READY</p>
+            <p>Tap play to hear the generated track. Its link expires after a day.</p>
+          </div>
+          <audio id="music-audio" controls preload="none" aria-label="Generated instrumental track"></audio>
+          <button id="music-close" class="mini" type="button" aria-label="Dismiss generated track">✕</button>
+        </div>
       </section>
     </div>
 

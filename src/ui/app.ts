@@ -735,6 +735,13 @@ export const mountApp = (): void => {
     event.preventDefault();
     void handleAgent();
   });
+  document.querySelector("#music-close")?.addEventListener("click", () => {
+    const player = document.querySelector<HTMLAudioElement>("#music-audio");
+    player?.pause();
+    player?.removeAttribute("src");
+    player?.load();
+    document.querySelector("#music-result")?.classList.add("hidden");
+  });
   document.querySelectorAll<HTMLButtonElement>("[data-recipe]").forEach((button) => {
     button.addEventListener("click", () => {
       const field = document.querySelector<HTMLInputElement>("#agent-input");

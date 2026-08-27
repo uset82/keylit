@@ -1154,6 +1154,7 @@ select.mini {
   grid-template-areas:
     "line  form"
     "chips chips"
+    "music music"
     "log   log";
   align-items: center;
   gap: 8px 18px;
@@ -1323,6 +1324,25 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 }
 
 .chat-transcript { grid-area: log; }
+
+/* A generated MiniMax track is intentionally a compact utility strip, not a
+   second dashboard. It appears only after a user explicitly asks for one. */
+.music-result {
+  grid-area: music;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 320px) auto;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid rgba(255, 210, 63, .32);
+  border-radius: 9px;
+  background: linear-gradient(90deg, rgba(255, 210, 63, .08), rgba(19, 22, 20, .46));
+}
+
+.music-result-copy { min-width: 0; }
+.music-result-kicker { margin-bottom: 2px; color: #ffd23f; font-size: 9px; letter-spacing: .2em; }
+.music-result-copy > p:last-child { color: var(--label-dim); font-size: 11px; line-height: 1.35; }
+.music-result audio { width: 100%; height: 30px; accent-color: #ffd23f; }
 
 .chat-transcript summary {
   width: max-content;
@@ -1812,11 +1832,14 @@ body[data-mode="teach"] .dj-only { display: none !important; }
       "line"
       "form"
       "chips"
+      "music"
       "log";
   }
 
   .chat-form { width: 100%; }
   .chat-take { display: none; }
+  .music-result { grid-template-columns: minmax(0, 1fr) auto; }
+  .music-result audio { grid-column: 1 / -1; }
 }
 
 @media (max-width: 700px) {

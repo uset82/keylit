@@ -21,6 +21,14 @@ const goodPatch = JSON.stringify({
   reply: "Thunder it is.",
   patch: { presetName: "THUNDER", layerA: { sampleId: "ok-bloom" }, fx: { distortion: 0.7 } },
 });
+const goodPhrase = JSON.stringify({
+  reply: "A short riff is on the roll.",
+  phrase: {
+    bpm: 108,
+    bars: 4,
+    notes: [{ midi: 60, startBeat: 0, durationBeats: 0.5, velocity: 96 }],
+  },
+});
 
 const base = { description: "thunderous stab", sheet: "ok-bloom (Ensemble): strings", ip: "1.1.1.1" };
 
@@ -37,6 +45,10 @@ const ok = await designReply({ ...base, apiKey: "k", ip: "2.2.2.2", fetchImpl: u
 check("valid -> 200", ok.status, 200);
 check("valid -> carries patch", ok.json.patch?.layerA?.sampleId, "ok-bloom");
 check("valid -> carries reply", typeof ok.json.reply, "string");
+
+const phrase = await designReply({ ...base, description: "make a MIDI riff", apiKey: "k", ip: "2.3.2.2", fetchImpl: upstream(goodPhrase) });
+check("phrase-only reply -> 200", phrase.status, 200);
+check("phrase-only reply -> carries notes", phrase.json.phrase?.notes?.[0]?.midi, 60);
 
 const fenced = await designReply({
   ...base,

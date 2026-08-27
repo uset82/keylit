@@ -1,7 +1,11 @@
+import { playPhrase } from "../engine/audio";
+import { generatePhrase } from "../engine/generate";
 import { applySoundPatch } from "../engine/patch";
-import { state } from "../store";
+import { patchState, setPhrase, state } from "../store";
+import type { PhraseStyle } from "../types";
 import { runTool } from "../webmcp/adapter";
 import { designViaLlm } from "./llm";
+import { generateInstrumental, showGeneratedInstrumental } from "./music";
 import { looksLikeSoundWords, patchFromWords } from "./sound-words";
 
 export type AgentMessage = {
@@ -320,37 +324,101 @@ export const runLessonTurn = async (id: string): Promise<string> => {
   }
 };
 
+const wantsCustomMidi = (prompt: string): boolean => {
+  const lower = prompt.toLowerCase();
+  if (/\b(export|download)\b/.test(lower)) return false;
+  const musicalThing = /\b(midi(?: notes?)?|notes?|melody|riff|arpeggio|bassline|chord progression|loop|phrase)\b/.test(lower);
+  const creation = /\b(create|generate|compose|write|make|build|custom|invent|arrange)\b/.test(lower);
+  return musicalThing && creation;
+};
+
+const wantsInstrumentalTrack = (prompt: string): boolean =>
+  /\b(instrumental|soundtrack|background music|music bed|ai music|minimax)\b/i.test(prompt) && !wantsCustomMidi(prompt);
+
+const styleFor = (prompt: string): PhraseStyle => {
+  const lower = prompt.toLowerCase();
+  if (/\bhouse\b/.test(lower)) return "house";
+  if (/\btechno\b/.test(lower)) return "techno";
+  if (/\brave\b|\btrance\b/.test(lower)) return "rave";
+  if (/\bgarage\b|\b2-step\b/.test(lower)) return "garage";
+  return "piano";
+};
+
+const barsFor = (prompt: string): 4 | 8 => (/\b8[ -]?bar|eight[ -]?bar\b/i.test(prompt) ? 8 : 4);
+
+const applyGeneratedPhrase = (notes: typeof state.phrase, bars: 4 | 8, bpm?: number): void => {
+  patchState({ bars, ...(bpm ? { bpm } : {}) });
+  setPhrase(notes);
+  playPhrase(notes);
+};
+
+const fallbackMidi = (prompt: string): string => {
+  const style = styleFor(prompt);
+  const bars = barsFor(prompt);
+  const phrase = generatePhrase(style, bars);
+  patchState({ style, bars, presetName: `${style.toUpperCase()} CUSTOM` });
+  setPhrase(phrase);
+  playPhrase(phrase);
+  return `I put a ${bars}-bar ${style} MIDI phrase on the roll. Play it, then use Export MIDI to keep it.`;
+};
+
+const instrumentalFromWords = async (prompt: string): Promise<string> => {
+  const track = await generateInstrumental(prompt);
+  if (!track) {
+    return "I could not make an instrumental track right now. Your custom MIDI generator and sound designer are still ready.";
+  }
+  showGeneratedInstrumental(track.audioUrl);
+  return "Your instrumental track is ready below. Tap play when you want to hear it.";
+};
+
 /**
- * Anything the recipes did not claim: try to hear it as a description of a sound.
- *
- * Two tiers, in this order. The LLM understands phrasing no keyword table will
- * ever cover, but it needs a key, a reachable proxy and a round trip. The word
- * mapper needs none of those and answers instantly, so it takes over the moment
- * the first tier declines — including when there is no key at all, which is the
- * normal case for anyone running this locally.
+ * Anything the recipes did not claim: hear it as an instrument description or
+ * a request for fresh MIDI. The LLM is the expressive layer, while the local
+ * mapper and phrase generator remain a fast, offline floor.
  */
 const designFromWords = async (prompt: string): Promise<string> => {
-  if (!looksLikeSoundWords(prompt)) {
+  const asksForSound = looksLikeSoundWords(prompt);
+  const asksForMidi = wantsCustomMidi(prompt);
+  if (!asksForSound && !asksForMidi) {
     const hearing = await runStep("get-lesson-state");
     return (
       `I can teach a song on these keys, or build you a sound. Try: teach me, Twinkle, ` +
-      `or describe one — "thunderous metallic stab".\n\n${hearing}`
+      `describe one — "thunderous metallic stab" — or ask for a custom 4-bar MIDI riff.\n\n${hearing}`
     );
   }
 
   const viaLlm = await designViaLlm(prompt);
   if (viaLlm) {
-    await applySoundPatch(viaLlm.patch);
-    return viaLlm.reply || `Sound built: ${state.presetName}. Play a key. Press Restore to undo.`;
+    if (viaLlm.patch) await applySoundPatch(viaLlm.patch);
+    if (viaLlm.phrase) {
+      applyGeneratedPhrase(viaLlm.phrase.notes, viaLlm.phrase.bars, viaLlm.phrase.bpm);
+      return viaLlm.reply || `I wrote ${viaLlm.phrase.notes.length} notes onto the roll. Play it or export the MIDI.`;
+    }
+    if (!asksForMidi) return viaLlm.reply || `Sound built: ${state.presetName}. Play a key. Press Restore to undo.`;
+
+    const localPhrase = fallbackMidi(prompt);
+    return viaLlm.reply ? `${viaLlm.reply}\n\n${localPhrase}` : localPhrase;
   }
 
-  const { patch, reply } = patchFromWords(prompt);
-  await applySoundPatch(patch);
-  return reply;
+  let soundReply = "";
+  if (asksForSound) {
+    const { patch, reply } = patchFromWords(prompt);
+    await applySoundPatch(patch);
+    soundReply = reply;
+  }
+  if (asksForMidi) {
+    const localPhrase = fallbackMidi(prompt);
+    return soundReply ? `${soundReply}\n\n${localPhrase}` : localPhrase;
+  }
+  return soundReply;
 };
 
 export const runAgentTurn = async (prompt: string): Promise<string> => {
   const text = prompt.trim().toLowerCase();
+  if (wantsInstrumentalTrack(prompt)) return instrumentalFromWords(prompt);
+  // A custom MIDI request must reach the model before the legacy `midi` export
+  // recipe below sees the word and downloads an unrelated existing phrase.
+  if (wantsCustomMidi(prompt)) return designFromWords(prompt.trim());
   // Recipes stay first and unchanged. They are instant and offline, and they own
   // every lesson trigger — a child asking for "twinkle" must never wait on a
   // network call, nor risk a model reinterpreting it as a request for a timbre.
