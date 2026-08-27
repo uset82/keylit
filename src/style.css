@@ -1196,6 +1196,33 @@ select.mini {
   color: var(--text);
 }
 
+/* The way out of a lesson, and the only one that survives landscape — .chat-chips
+   (which holds the "stop lesson" chip) is display:none there, so a child who has
+   had enough is otherwise stuck until someone reloads the page.
+
+   Deliberately not cyan, amber or green: those three already mean "play this",
+   "you" and "your teacher" on the keys, and a quit button is not a musical cue.
+   `margin-left: auto` parks it at the far end of .chat-line, away from the keys,
+   so it cannot be hit by accident mid-song. */
+.quit-chip {
+  margin-left: auto;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid rgba(220, 120, 110, .42);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(60, 34, 32, .9), rgba(38, 22, 21, .9));
+  color: #f0c9c3;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.5);
+  transition: background var(--t-ui), color var(--t-ui), transform 90ms var(--ease-key);
+}
+
+.quit-chip:hover { background: linear-gradient(180deg, rgba(86, 44, 40, .95), rgba(52, 28, 26, .95)); color: #fff; }
+.quit-chip:active { transform: translateY(1px); }
+
 .chat-take {
   font-size: 10px;
   letter-spacing: .14em;
@@ -1926,7 +1953,7 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   .agent-input { padding: 10px 12px; }
 
   /* --- tap targets ----------------------------------------------------- */
-  .chip, .mini, .ghost-btn {
+  .chip, .mini, .ghost-btn, .quit-chip {
     min-height: 44px;
     font-size: 12px;
     padding: 10px 14px;
@@ -2047,6 +2074,9 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   .keybed-scroll { margin: 6px -12px 0; }
   .keybed-bar { margin-top: 4px; }
   .keybed-tools .mini { min-height: 40px; min-width: 40px; padding: 8px; }
+  /* 40px rather than the usual 44: this row is the only thing between the coach
+     line and the keys, and the keys win any fight over landscape height. */
+  .quit-chip { min-height: 40px; padding: 8px 12px; font-size: 11px; }
 }
 
 /* ============================================================
