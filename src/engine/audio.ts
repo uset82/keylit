@@ -123,6 +123,12 @@ const bindProgress = (): void => {
 
 export const getAnalyser = (): AnalyserNode | null => analyser;
 
+/**
+ * The master gain, for sources that should obey the volume knob and show on the
+ * meter but skip the filter/crush chain — the backing drums are the one case.
+ */
+export const getMasterBus = (): GainNode | null => master;
+
 export const applyMaster = (): void => {
   if (master) master.gain.value = state.master;
 };

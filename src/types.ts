@@ -162,6 +162,8 @@ export type InstrumentState = {
   sustain: boolean;
   /** Beginner mode: letter every white key. On by default. */
   noteNames: boolean;
+  /** Backing beat pattern id, or "" for off. */
+  drums: string;
   /** Context exists but is not running — iOS silent switch or a lost gesture. */
   audioBlocked: boolean;
 };

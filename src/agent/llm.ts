@@ -15,7 +15,7 @@ import { clampGeneratedPhrase, type GeneratedPhrase } from "../engine/generated-
  * happening on screen, so the budget is set by their patience, not by how long
  * a model might plausibly take. A slow model is simply a model we do not use.
  */
-const TIMEOUT_MS = 3500;
+const TIMEOUT_MS = 8000;
 
 /**
  * Once the endpoint has told us it has no key, stop asking. Without this every
@@ -36,6 +36,14 @@ let unavailable = false;
  */
 const MAX_FAILURES = 2;
 let failures = 0;
+
+/**
+ * True once this tier has given up for the session, so the caller can SAY the
+ * sound designer is offline instead of silently handing back the offline
+ * mapper's answer. Failing quietly is why this looked broken rather than
+ * degraded: the chat simply stopped being clever and never said why.
+ */
+export const llmUnavailable = (): boolean => unavailable;
 
 const noteFailure = (): null => {
   failures += 1;

@@ -11,8 +11,23 @@
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-/** Free and built for tool use. The router is the backstop if it is busy. */
-const MODELS = ["thinkingmachines/inkling:free", "openrouter/free"];
+/**
+ * Free models, JSON-capable first.
+ *
+ * This order is load-bearing. `thinkingmachines/inkling:free` led here and does
+ * NOT advertise `response_format` in its OpenRouter capabilities — asking it for
+ * `json_object` got prose back, which never parsed, so every single request fell
+ * through to a 502. The router leads instead: it supports both `response_format`
+ * and `structured_outputs`, and being a router it picks a live free model rather
+ * than pinning one id that can quietly disappear.
+ *
+ * `json` marks whether a model can be sent `response_format`. Sending it to a
+ * model that cannot honour it is the bug this file used to have.
+ */
+const MODELS = [
+  { id: "openrouter/free", json: true },
+  { id: "thinkingmachines/inkling:free", json: false },
+];
 
 const MAX_DESCRIPTION = 400;
 const MAX_SHEET_LINES = 12;
@@ -23,10 +38,17 @@ const MAX_SHEET_LINE = 200;
  * three, so the second attempt was never once seen by a user — it only kept an
  * upstream connection warm for nobody.
  */
-const UPSTREAM_TIMEOUT_MS = 3000;
+const UPSTREAM_TIMEOUT_MS = 6000;
 
-/** Only try a second model if the first failed fast rather than timed out. */
-const SECOND_MODEL_BUDGET_MS = 1200;
+/**
+ * Only try a second model if the first failed fast rather than timed out.
+ *
+ * This was 1200ms while a real round trip measured 3.3s, which made the fallback
+ * unreachable by construction: the first model always overran the budget, so the
+ * second was never once tried. It has to sit above the observed latency of the
+ * model in front of it or it is decoration.
+ */
+const SECOND_MODEL_BUDGET_MS = 4500;
 
 /**
  * Per-IP sliding window.
@@ -117,10 +139,12 @@ const callModel = async (model, description, sheet, apiKey, fetchImpl) => {
         "x-title": "KEYLIT",
       },
       body: JSON.stringify({
-        model,
+        model: model.id,
         max_tokens: 700,
         temperature: 0.7,
-        response_format: { type: "json_object" },
+        // Only for models that advertise it. OpenRouter rejects or ignores it
+        // elsewhere, and an ignored json_object means prose comes back instead.
+        ...(model.json ? { response_format: { type: "json_object" } } : {}),
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: `Instruments available:\n${sheet}` },
@@ -167,7 +191,7 @@ export const designReply = async ({ description, sheet, apiKey, ip, fetchImpl })
     if (parsed && (parsed.patch || parsed.phrase)) {
       return {
         status: 200,
-        json: { reply: String(parsed.reply ?? ""), patch: parsed.patch ?? null, phrase: parsed.phrase ?? null, model },
+        json: { reply: String(parsed.reply ?? ""), patch: parsed.patch ?? null, phrase: parsed.phrase ?? null, model: model.id },
       };
     }
     // Answering "no" quickly is worth more than a second attempt nobody waits
