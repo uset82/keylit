@@ -447,6 +447,9 @@ const updateView = (): void => {
   document.querySelector("#duet-strip")?.classList.toggle("together", together);
   document.querySelector("#lesson-strip")?.classList.toggle("teaching", teaching);
   document.querySelector("#lesson-pill")?.classList.toggle("live", teaching);
+  // Only while there is something to quit. A permanent one would be the biggest
+  // button on a landscape phone with nothing to do most of the time.
+  document.querySelector("#quit-lesson")?.classList.toggle("hidden", !state.lesson);
   document.querySelector("#piano")?.classList.toggle("show-names", state.noteNames);
   document.querySelector("#note-names")?.classList.toggle("live", state.noteNames);
   document.querySelector("#audio-blocked")?.classList.toggle("hidden", !state.audioBlocked);
