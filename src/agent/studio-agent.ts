@@ -22,16 +22,93 @@ type Recipe = {
 };
 
 const RECIPES: Recipe[] = [
-  // Mode is the most global thing the agent can change, and "teaching mode" would
-  // otherwise be eaten by the /teach|learn|lesson/ catch-all further down, so both
-  // mode recipes sit at the very top of the table.
+  // ── Pedagogical DJ / Track Creation & Studio Recipes ────────────────────
   {
-    match: /dj mode|producer mode|make (me )?(a )?(track|beat)|i want to (dj|make music)|let me dj/,
+    match: /^(make (a |me a )?track|track maker|create (a )?track|how to make a track|make track)$/,
+    steps: [
+      { tool: "make-track", input: { style: "house", bars: 4 } },
+    ],
+    say: "Welcome to Track Maker! 🎹\n\nHere is how modern tracks are built:\n1. Harmony: I loaded a 4-bar House chord loop (F Major I-vi-IV-V) on the roll.\n2. Rhythm: Four-on-the-floor kick with offbeat open hi-hats keeping time.\n3. Your Turn: Play along on the keybed! Try root notes (F, D, Bb, C) or solo with the white keys.\n\nTip: You can say 'piano track', 'rave track', 'techno track', or 'garage track' to explore all five styles!",
+  },
+  {
+    match: /piano (track|loop|beat)|ballad (track|loop)|jazz (track|loop)/,
+    steps: [
+      { tool: "make-track", input: { style: "piano", bars: 4 } },
+    ],
+    say: "Piano Ballad Track (96 BPM) 🎶\n\n• Harmony: C Major 7th chords (I-vi-IV-V) on Steinway grand + string ensemble.\n• Rhythm: Gentle acoustic backbeat.\n• Pedagogical Tip: Use the white keys (C major scale) to improvise smooth melodic lines over the chords.",
+  },
+  {
+    match: /rave (track|loop|stab)|c minor rave|rave/,
+    steps: [
+      { tool: "make-track", input: { style: "rave", bars: 4 } },
+    ],
+    say: "90s Rave Track (138 BPM) ⚡\n\n• Harmony: High-energy C minor stabs (i-VII-VI-VII) on CP80 electric piano & drawbar organ.\n• Rhythm: Pumping dance groove with 16th-note syncopation.\n• Pedagogical Tip: Play C minor pentatonic notes (C, Eb, F, G, Bb) to lay down classic rave hooks.",
+  },
+  {
+    match: /house (track|loop|beat)|house/,
+    steps: [
+      { tool: "make-track", input: { style: "house", bars: 4 } },
+    ],
+    say: "Classic House Track (124 BPM) 🏠\n\n• Harmony: F Major I-vi-IV-V progression comped on the downbeats and upbeat pushes.\n• Rhythm: Iconic four-on-the-floor kick with open hi-hats.\n• Pedagogical Tip: Try short rhythmic stabs on F, A, C or play walking basslines on the low octave.",
+  },
+  {
+    match: /techno (track|loop|beat)|techno/,
+    steps: [
+      { tool: "make-track", input: { style: "techno", bars: 4 } },
+    ],
+    say: "Driving Underground Techno (130 BPM) 🏭\n\n• Harmony: Dark A minor offbeat stabs (i-VI-III-VII) with space left for low-end pressure.\n• Rhythm: Relentless kick drum with filtered percussion.\n• Pedagogical Tip: Hold single low bass drones (A, F, C, G) or add fast, minimalist stabs.",
+  },
+  {
+    match: /garage (track|loop|beat)|two[- ]step|2[- ]step|garage/,
+    steps: [
+      { tool: "make-track", input: { style: "garage", bars: 4 } },
+    ],
+    say: "UK Garage 2-Step Track (132 BPM) 🇬🇧\n\n• Harmony: Soulful A Dorian modal chords on Wurlitzer EP200 & felt piano.\n• Rhythm: Syncopated shuffled kick and skipping hats.\n• Pedagogical Tip: Play syncopated off-beat chords to lock into the groove swing.",
+  },
+  {
+    match: /explain (the )?(fx|effects|knobs)|show (the )?(fx|effects)|(what are|demo) (the )?(fx|effects)|fx knobs|effects rack/,
+    steps: [
+      { tool: "focus-control", input: { target: "fx" } },
+    ],
+    say: "FX Knobs: Real-Time Signal Processing 🎛️\n\n1. FILTER: Low-pass filter. Turn down to cut highs for a dark underwater sound; turn up for crisp presence.\n2. DISTORTION: Soft-clip overdrive. Adds analog warmth, harmonic saturation, and bite.\n3. CRUSH: Bitcrusher. Reduces bit depth and sampling rate for crunchy vintage 8-bit / sampler grit.\n4. DELAY: Echo. Creates rhythmic repeats synced to the beat.\n5. REVERB: Spatial acoustics. Simulates room reflections from a cozy bedroom to a cavernous hall.\n\nTry turning the knobs in the STUDIO rack above while playing a key!",
+  },
+  {
+    match: /two layers|layering|dual layer|layer (sounds|instruments)|stack (a )?grand under strings/,
+    steps: [
+      { tool: "set-layer", input: { layer: "A", sampleId: "pn-ivory", volume: 0.88, transpose: 0, locked: false } },
+      { tool: "set-layer", input: { layer: "B", sampleId: "ok-bloom", volume: 0.42, transpose: 12, locked: false } },
+      { tool: "focus-control", input: { target: "layers" } },
+    ],
+    say: "Two Layers: Sound Stacking & Orchestration 🎹🎻\n\n• Concept: Combining two different instruments creates rich, cinematic textures.\n• Layer A: Steinway Grand Piano delivers the punchy percussive hammer strike.\n• Layer B: String Ensemble transposed +12 semitones (1 octave up) adds a lush shimmering body.\n• Volume Knobs: VOL A and VOL B balance the acoustic strike and string pad.\n• Lock A/B: Click 'Lock A' to keep your piano tone while browsing other sounds on Layer B!",
+  },
+  {
+    match: /tempo guide|explain (tempo|bpm)|how does tempo work|tempo clock/,
+    steps: [
+      { tool: "focus-control", input: { target: "tempo" } },
+    ],
+    say: "Tempo & Clock: Mastering BPM ⏱️\n\n• BPM (Beats Per Minute) sets the pulse of your track (50 to 180 BPM).\n• Ballad / Lo-Fi: 70–95 BPM\n• House: 120–126 BPM\n• Techno / Garage: 128–135 BPM\n• Rave / DnB: 138–174 BPM\n\n• Dynamic Control: Drag the slider in STUDIO, tap - / +, or tell me 'faster' or 'slower' anytime!",
+  },
+  {
+    match: /export midi|how to export midi|download (the )?midi|midi export|take to daw/,
+    steps: [
+      { tool: "export-midi" },
+    ],
+    say: "Export MIDI to DAW 💾\n\n• MIDI vs Audio: MIDI doesn't record raw audio waveforms — it saves note numbers, velocities, and rhythm timestamps.\n• DAW Drag & Drop: Drag the downloaded .mid file into Ableton Live, FL Studio, Logic Pro, GarageBand, Cubase, or Reaper.\n• Production Freedom: In your DAW, you can assign any synthesizer, piano, or orchestra plugin to play these exact notes.",
+  },
+  {
+    match: /switch to lessons?|lessons? stay hidden|back to (learning|lessons?)|how to switch/,
+    steps: [
+      { tool: "set-mode", input: { mode: "teach" } },
+    ],
+    say: "Switched to Learn to Play mode! 🎓\n\n• In Teaching Mode: Lessons guide you step-by-step with glowing keys on the piano.\n• In DJ Mode: Decks open so you can create loops, tweak FX, and jam freely.\n\nYou can switch between them anytime using the toggle above the keys!",
+  },
+  {
+    match: /dj mode|producer mode|i want to (dj|make music)|let me dj/,
     steps: [{ tool: "set-mode", input: { mode: "dj" } }],
     say: "DJ mode. Lessons out of the way, decks open.",
   },
   {
-    match: /teach(ing)? mode|lesson mode|learn mode|back to (lessons?|teaching|learning)/,
+    match: /teach(ing)? mode|lesson mode|learn mode|back to teaching/,
     steps: [{ tool: "set-mode", input: { mode: "teach" } }],
     say: "Teaching mode. Pick a lesson and I will light the first key.",
   },
@@ -159,7 +236,7 @@ const RECIPES: Recipe[] = [
   {
     // Above the catch-all below, which owns the bare word "teach" and would
     // otherwise answer "teach me this riff" with the find-a-C lesson.
-    match: /(teach|learn|play).{0,12}(this|that|it|the (riff|loop|phrase|beat|groove))|teach me (this|that|it)/,
+    match: /\b(teach|learn)\b.{0,12}\b(this|that|it|riff|loop|phrase)\b/,
     steps: [{ tool: "teach-phrase" }],
     say: "Here is the top line of that riff, one key at a time.",
   },
@@ -229,49 +306,7 @@ const RECIPES: Recipe[] = [
     say: "Here is the live instrument.",
   },
   {
-    match: /c minor|rave/,
-    steps: [
-      { tool: "set-layer", input: { layer: "A", sampleId: "sy-rail", volume: 0.86, transpose: 0 } },
-      { tool: "set-layer", input: { layer: "B", sampleId: "or-reed", volume: 0.28, transpose: 12 } },
-      // A stab has to stop before the next one lands. The factory release runs
-      // 550ms, which at these tempos smears four hits a bar into one chord.
-      { tool: "set-adsr", input: { attack: 0.001, decay: 0.2, sustain: 0.24, release: 0.16 } },
-      { tool: "set-fx", input: { filter: 0.68, distortion: 0.14, crush: 0.14, delay: 0.18, reverb: 0.18 } },
-      { tool: "generate-phrase", input: { style: "rave", bars: 4 } },
-    ],
-    say: "C-minor rave stab on the CP80, i-VII-VI.",
-  },
-  {
-    match: /house/,
-    steps: [
-      { tool: "set-layer", input: { layer: "A", sampleId: "sy-rail", volume: 0.84, transpose: 0 } },
-      { tool: "set-layer", input: { layer: "B", volume: 0 } },
-      { tool: "set-adsr", input: { attack: 0.002, decay: 0.24, sustain: 0.3, release: 0.2 } },
-      { tool: "set-fx", input: { filter: 0.8, distortion: 0.06, crush: 0.08, delay: 0.14, reverb: 0.18 } },
-      { tool: "generate-phrase", input: { style: "house", bars: 4 } },
-      // Last, so the kit inherits the tempo generate-phrase just set and starts
-      // against a context the steps above have already armed.
-      { tool: "set-drums", input: { pattern: "house" } },
-    ],
-    say: "F-major house comp, I-vi-IV-V, over four on the floor.",
-  },
-  {
-    // Was the harshest preset in the app: crush 0.34 with distortion 0.2, which
-    // makeCurve turns into a k=8 clip, over a phrase whose bars overlapped each
-    // other. The pile-up is gone, and these are the levels the stab needs.
-    match: /techno/,
-    steps: [
-      { tool: "set-layer", input: { layer: "A", sampleId: "sy-rail", volume: 0.82, transpose: 0 } },
-      { tool: "set-layer", input: { layer: "B", volume: 0 } },
-      { tool: "set-adsr", input: { attack: 0.001, decay: 0.14, sustain: 0.18, release: 0.12 } },
-      { tool: "set-fx", input: { filter: 0.7, distortion: 0.08, crush: 0.12, delay: 0.12, reverb: 0.1 } },
-      { tool: "generate-phrase", input: { style: "techno", bars: 4 } },
-      { tool: "set-drums", input: { pattern: "techno" } },
-    ],
-    say: "A-minor techno: offbeat stabs over the kick.",
-  },
-  {
-    match: /steinway|ballad|roland/,
+    match: /steinway|roland/,
     steps: [
       { tool: "set-layer", input: { layer: "A", sampleId: "pn-ivory", volume: 0.9, transpose: 0 } },
       { tool: "set-layer", input: { layer: "B", sampleId: "ok-bloom", volume: 0, transpose: 0 } },

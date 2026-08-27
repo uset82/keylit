@@ -259,8 +259,14 @@
           <button class="chip" data-recipe="thunderous metallic stab" type="button">describe a sound</button>
           <button class="chip teach-only" data-recipe="what do you hear" type="button">what do you hear</button>
           <button class="chip dj-only" data-recipe="make me a rave loop" type="button">rave loop</button>
-          <button class="chip dj-only" data-recipe="house beat" type="button">house beat</button>
+          <!-- "house", not "house beat": the latter matches the drums-only recipe
+               and returns a kick loop with nothing over it, while every other
+               style chip here returns a full patch, riff and beat. -->
+          <button class="chip dj-only" data-recipe="house" type="button">house</button>
           <button class="chip dj-only" data-recipe="techno" type="button">techno</button>
+          <!-- The bridge back to the lessons: whatever the agent just invented
+               becomes something the student can actually play. -->
+          <button class="chip dj-only" data-recipe="teach me this riff" type="button">teach me this</button>
           <button class="chip dj-only" data-recipe="speed it up" type="button">faster</button>
           <button class="chip dj-only" data-recipe="reset the sound" type="button">reset sound</button>
         </div>
