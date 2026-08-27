@@ -29,6 +29,7 @@ import {
   teacherLine,
 } from "../engine/lessons";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
+import { applySoundPatch, clampPatch, sampleSheet } from "../engine/patch";
 import { playAgentNotes } from "../engine/perform";
 import { retimeTransport } from "../engine/transport";
 import {
@@ -317,8 +318,67 @@ export const instrumentTools = (): ToolDefinition[] => [
       }),
   },
   {
+    name: "design-instrument",
+    description:
+      `Build a whole instrument sound in one call from a description like "metallic digital orchestral stab" or ` +
+      `"thunderous staccato strikes". Prefer this over separate set-layer/set-adsr/set-fx calls.\n\n` +
+      `Samples (layer A is the main voice, layer B is optional and layers on top at a lower volume):\n${sampleSheet()}\n\n` +
+      `Shaping the sound: filter 0=dark and muffled, 1=bright and open. distortion and crush add grit and metal. ` +
+      `delay and reverb add space. attack is seconds to reach full volume (0.001=percussive slap, 0.6=slow swell). ` +
+      `release is seconds to fade after key-up (0.05=staccato stab, 2.5=long tail). transpose is semitones, ` +
+      `use -12 on layer B for weight or +12 for shimmer. Out-of-range or unknown values are dropped, not clamped to a guess.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        presetName: { type: "string", description: "Short name for the LCD, e.g. THUNDER STAB" },
+        layerA: {
+          type: "object",
+          properties: {
+            sampleId: { type: "string", enum: FACTORY_SAMPLES.map((sample) => sample.id) },
+            volume: { type: "number", minimum: 0, maximum: 1 },
+            transpose: { type: "integer", minimum: -24, maximum: 24 },
+          },
+        },
+        layerB: {
+          type: "object",
+          properties: {
+            sampleId: { type: "string", enum: FACTORY_SAMPLES.map((sample) => sample.id) },
+            volume: { type: "number", minimum: 0, maximum: 1 },
+            transpose: { type: "integer", minimum: -24, maximum: 24 },
+          },
+        },
+        adsr: {
+          type: "object",
+          properties: {
+            attack: { type: "number", minimum: 0.001, maximum: 2 },
+            decay: { type: "number", minimum: 0.01, maximum: 2 },
+            sustain: { type: "number", minimum: 0, maximum: 1 },
+            release: { type: "number", minimum: 0.02, maximum: 3 },
+          },
+        },
+        fx: {
+          type: "object",
+          properties: {
+            filter: { type: "number", minimum: 0, maximum: 1 },
+            distortion: { type: "number", minimum: 0, maximum: 1 },
+            crush: { type: "number", minimum: 0, maximum: 1 },
+            delay: { type: "number", minimum: 0, maximum: 1 },
+            reverb: { type: "number", minimum: 0, maximum: 1 },
+          },
+        },
+      },
+    },
+    execute: (input) =>
+      withAgent("design-instrument", async () => {
+        const patch = clampPatch(input);
+        if (!patch) return textResult("Nothing usable in that patch. Every field was missing or out of range.");
+        await applySoundPatch(patch);
+        return textResult(`Sound built: ${state.presetName}. Play a key to hear it.`);
+      }),
+  },
+  {
     name: "set-layer",
-    description: "Set layer A or B sample, volume, transpose, or lock.",
+    description: `Set layer A or B sample, volume, transpose, or lock. Samples:\n${sampleSheet()}`,
     inputSchema: {
       type: "object",
       properties: {

@@ -1,4 +1,8 @@
+import { applySoundPatch } from "../engine/patch";
+import { state } from "../store";
 import { runTool } from "../webmcp/adapter";
+import { designViaLlm } from "./llm";
+import { looksLikeSoundWords, patchFromWords } from "./sound-words";
 
 export type AgentMessage = {
   role: "user" | "agent";
@@ -316,13 +320,42 @@ export const runLessonTurn = async (id: string): Promise<string> => {
   }
 };
 
+/**
+ * Anything the recipes did not claim: try to hear it as a description of a sound.
+ *
+ * Two tiers, in this order. The LLM understands phrasing no keyword table will
+ * ever cover, but it needs a key, a reachable proxy and a round trip. The word
+ * mapper needs none of those and answers instantly, so it takes over the moment
+ * the first tier declines — including when there is no key at all, which is the
+ * normal case for anyone running this locally.
+ */
+const designFromWords = async (prompt: string): Promise<string> => {
+  if (!looksLikeSoundWords(prompt)) {
+    const hearing = await runStep("get-lesson-state");
+    return (
+      `I can teach a song on these keys, or build you a sound. Try: teach me, Twinkle, ` +
+      `or describe one — "thunderous metallic stab".\n\n${hearing}`
+    );
+  }
+
+  const viaLlm = await designViaLlm(prompt);
+  if (viaLlm) {
+    await applySoundPatch(viaLlm.patch);
+    return viaLlm.reply || `Sound built: ${state.presetName}. Play a key. Press Restore to undo.`;
+  }
+
+  const { patch, reply } = patchFromWords(prompt);
+  await applySoundPatch(patch);
+  return reply;
+};
+
 export const runAgentTurn = async (prompt: string): Promise<string> => {
   const text = prompt.trim().toLowerCase();
+  // Recipes stay first and unchanged. They are instant and offline, and they own
+  // every lesson trigger — a child asking for "twinkle" must never wait on a
+  // network call, nor risk a model reinterpreting it as a request for a timbre.
   const recipe = RECIPES.find((item) => item.match.test(text));
-  if (!recipe) {
-    const hearing = await runStep("get-lesson-state");
-    return `I can teach a song on these keys. Try: teach me, Happy Birthday, Twinkle, C scale.\n\n${hearing}`;
-  }
+  if (!recipe) return designFromWords(prompt.trim());
   const lines: string[] = [recipe.say];
   for (const step of recipe.steps) {
     try {

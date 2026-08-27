@@ -3,3 +3,9 @@ dist
 .DS_Store
 *.local
 .vercel
+
+# Secrets. The OpenRouter key lives in hosting config (ChatGPT Sites settings or
+# Vercel env vars), never in the repo — this repo is public and auto-commits.
+.env
+.env.*
+!.env.example

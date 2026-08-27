@@ -214,7 +214,7 @@
         </div>
 
         <form id="agent-form" class="chat-form">
-          <input id="agent-input" class="agent-input" placeholder="Teach me piano…" aria-label="Ask the teacher" />
+          <input id="agent-input" class="agent-input" placeholder="Teach me piano, or describe a sound…" aria-label="Ask the teacher, or describe a sound to build" />
           <button class="generate sm" type="submit">Go</button>
           <button class="ghost-btn songs-btn" data-intro-open type="button" aria-label="Songs and lessons">Songs</button>
         </form>
@@ -233,6 +233,10 @@
           <button class="chip" data-recipe="harmonize" type="button">harmonize</button>
           <button class="chip" data-recipe="answer me" type="button">answer me</button>
           <button id="follow-chip" class="chip" data-recipe="follow me" type="button">follow me</button>
+          <!-- Label teaches the capability, the recipe demonstrates it: the phrase it
+               sends shows up in the transcript, so one tap explains the whole feature
+               better than a label matching its own action would. -->
+          <button class="chip" data-recipe="thunderous metallic stab" type="button">describe a sound</button>
           <button class="chip teach-only" data-recipe="what do you hear" type="button">what do you hear</button>
           <button class="chip dj-only" data-recipe="make me a rave loop" type="button">rave loop</button>
           <button class="chip dj-only" data-recipe="house beat" type="button">house beat</button>

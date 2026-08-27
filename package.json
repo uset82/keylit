@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/prepare-site.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:design": "node scripts/check-design.mjs"
   },
   "dependencies": {
     "@mcp-b/webmcp-polyfill": "^5.0.1",
