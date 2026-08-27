@@ -12,6 +12,19 @@ type Recipe = {
 };
 
 const RECIPES: Recipe[] = [
+  // Mode is the most global thing the agent can change, and "teaching mode" would
+  // otherwise be eaten by the /teach|learn|lesson/ catch-all further down, so both
+  // mode recipes sit at the very top of the table.
+  {
+    match: /dj mode|producer mode|make (me )?(a )?(track|beat)|i want to (dj|make music)|let me dj/,
+    steps: [{ tool: "set-mode", input: { mode: "dj" } }],
+    say: "DJ mode. Lessons out of the way, decks open.",
+  },
+  {
+    match: /teach(ing)? mode|lesson mode|learn mode|back to (lessons?|teaching|learning)/,
+    steps: [{ tool: "set-mode", input: { mode: "teach" } }],
+    say: "Teaching mode. Pick a lesson and I will light the first key.",
+  },
   {
     match: /stop (the )?lesson|stop teach|end lesson/,
     steps: [{ tool: "stop-lesson" }],
@@ -23,6 +36,18 @@ const RECIPES: Recipe[] = [
     match: /put it back|back to normal|sounds? (bad|weird|broken)|factory|reset( the)? (sound|effects|fx|knobs)|^reset$|undo the/,
     steps: [{ tool: "reset-sound" }],
     say: "Putting the sound back to normal.",
+  },
+  // Above the lesson recipes: "slow down Twinkle" is a tempo request, not a
+  // request to restart Twinkle from the top.
+  {
+    match: /slow(er| it| this| that| down)|half speed|too fast/,
+    steps: [{ tool: "set-bpm", input: { scale: 0.7 } }],
+    say: "Slowing it down. Play it right first — speed comes free after that.",
+  },
+  {
+    match: /faster|speed (it|this|that)? ?up|quicker|too slow/,
+    steps: [{ tool: "set-bpm", input: { scale: 1.3 } }],
+    say: "Faster.",
   },
   {
     match: /show next|what next|next keys|hint|which key/,
@@ -85,6 +110,34 @@ const RECIPES: Recipe[] = [
     match: /play c d e|c d e|first keys?/,
     steps: [{ tool: "start-lesson", input: { lesson: "first-keys" } }],
     say: "C, D, E — three white keys in a row.",
+  },
+  // The tiered repertoire. All six sit above the /teach|learn|lesson/ catch-all,
+  // and "heart and soul" also has to clear the later /hear|listen|duet/ recipe —
+  // "heart" contains "hear", and that entry matches "duet" outright.
+  {
+    match: /hot cross|buns/,
+    steps: [{ tool: "start-lesson", input: { lesson: "hot-cross-buns" } }],
+    say: "Hot Cross Buns. Three keys, three fingers — everyone starts here.",
+  },
+  {
+    match: /mary|little lamb|lamb/,
+    steps: [{ tool: "start-lesson", input: { lesson: "mary-lamb" } }],
+    say: "Mary Had a Little Lamb. Same three keys, plus G under your little finger.",
+  },
+  {
+    match: /heart and soul|heart & soul|heart|four hands/,
+    steps: [{ tool: "start-lesson", input: { lesson: "heart-and-soul" } }],
+    say: "Heart and Soul — a real duet. I hold the loop, you play the tune.",
+  },
+  {
+    match: /chopsticks|chop sticks|chop waltz/,
+    steps: [{ tool: "start-lesson", input: { lesson: "chopsticks" } }],
+    say: "Chopsticks. One index finger in each hand, chopping straight down.",
+  },
+  {
+    match: /f[uü]r elise|elise/,
+    steps: [{ tool: "start-lesson", input: { lesson: "fur-elise" } }],
+    say: "Für Elise. Your first black keys — D sharp sits just left of E.",
   },
   {
     match: /teach|learn|lesson|beginner|how (do i|to) play/,
@@ -246,6 +299,21 @@ const runStep = async (tool: string, input: Record<string, unknown> = {}): Promi
   // retrying a tool that threw halfway would run its side effects twice.
   const result = await runTool(tool, input);
   return formatResult(result);
+};
+
+/**
+ * Start a lesson by its id, skipping phrase matching entirely.
+ *
+ * The celebration modal's "Next Lesson" button used to guess at a phrase and hope
+ * a recipe caught it, which broke as soon as a lesson title stopped resembling
+ * its trigger words ("C major chord" matches no recipe at all).
+ */
+export const runLessonTurn = async (id: string): Promise<string> => {
+  try {
+    return await runStep("start-lesson", { lesson: id });
+  } catch (error) {
+    return `Could not start that lesson: ${error instanceof Error ? error.message : "error"}`;
+  }
 };
 
 export const runAgentTurn = async (prompt: string): Promise<string> => {

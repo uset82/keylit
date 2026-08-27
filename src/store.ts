@@ -1,4 +1,4 @@
-import type { DuetMode, InstrumentState, LayerId, LessonState, PhraseNote, Player, TakeEvent } from "./types";
+import type { AppMode, DuetMode, InstrumentState, LayerId, LessonState, PhraseNote, Player, TakeEvent } from "./types";
 
 export const FACTORY_SAMPLES = [
   { id: "pn-ivory", name: "Steinway", kind: "piano" as const, source: "Splendid Grand · 4 vel" },
@@ -37,9 +37,21 @@ export const FACTORY_SOUND: Pick<
   fx: { filter: 0.92, distortion: 0, crush: 0, delay: 0.05, reverb: 0.16 },
 };
 
+const MODE_KEY = "keylit.mode";
+
+/** Read at module load so the very first paint is already in the right mode. */
+const storedMode = ((): AppMode => {
+  try {
+    return localStorage.getItem(MODE_KEY) === "dj" ? "dj" : "teach";
+  } catch {
+    return "teach";
+  }
+})();
+
 export const state: InstrumentState = {
   ready: false,
   agentActing: null,
+  appMode: storedMode,
   lcdPage: "browse",
   // Cloned, or the running state and the factory reference would be the same objects.
   ...structuredClone(FACTORY_SOUND),
@@ -108,6 +120,16 @@ export const liftKey = (midi: number, player?: Player): void => {
   if (!player || player === "human") human.delete(midi);
   if (!player || player === "agent") agent.delete(midi);
   syncHeld([...human], [...agent]);
+};
+
+export const setAppMode = (appMode: AppMode): void => {
+  state.appMode = appMode;
+  try {
+    localStorage.setItem(MODE_KEY, appMode);
+  } catch {
+    // Private-mode Safari refuses writes. The mode still applies for this session.
+  }
+  notify();
 };
 
 export const setDuetMode = (duetMode: DuetMode): void => {

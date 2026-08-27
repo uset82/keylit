@@ -2,6 +2,9 @@ export type SampleKind = "piano" | "organ" | "synth" | "orchestra" | "bass" | "m
 
 export type LcdPage = "browse" | "envelope";
 
+/** What the page is for right now. Teaching shows the curriculum; DJ surfaces the studio. */
+export type AppMode = "teach" | "dj";
+
 export type PhraseStyle = "rave" | "house" | "techno" | "piano" | "garage";
 
 export type LayerId = "A" | "B";
@@ -11,16 +14,39 @@ export type Player = "human" | "agent";
 export type DuetMode = "idle" | "follow";
 
 export type LessonId =
+  // First steps — find the keys. No tier, no clock.
   | "landmarks"
   | "first-keys"
   | "rh-c-position"
   | "lh-c-position"
   | "hands-together"
-  | "c-scale"
   | "c-chord"
+  // Basic — right hand, five-finger position.
+  | "hot-cross-buns"
+  | "mary-lamb"
   | "twinkle"
+  // Intermediate — both hands, metronome.
   | "ode"
-  | "birthday";
+  | "birthday"
+  | "heart-and-soul"
+  // Advanced — hand independence at tempo.
+  | "c-scale"
+  | "chopsticks"
+  | "fur-elise";
+
+/** Where a lesson sits on the ladder. "steps" is the untiered find-the-keys group. */
+export type LessonTier = "steps" | "basic" | "intermediate" | "advanced";
+
+/**
+ * How strictly a lesson is timed.
+ * - `free` waits forever for the right note and never mentions rhythm.
+ * - `metronome` clicks and grades timing, but a late note still counts.
+ * - `strict` adds the falling-note highway and drops the lit key.
+ */
+export type LessonTiming = "free" | "metronome" | "strict";
+
+/** How close to the beat a note landed. `none` means the lesson is not timed. */
+export type TimingGrade = "none" | "perfect" | "good" | "early" | "late";
 
 /** 1 = thumb … 5 = little finger, on both hands. */
 export type Finger = 1 | 2 | 3 | 4 | 5;
@@ -42,6 +68,8 @@ export type LessonStep = {
   landmark?: BlackGroup;
   /** Grade by pitch class instead of exact MIDI — "press any C". */
   anyOctave?: boolean;
+  /** Beat this step is due on, counted from the start of the lesson. Untimed without it. */
+  beat?: number;
 };
 
 export type LessonGrade = "wait" | "hit" | "miss" | "done";
@@ -50,12 +78,22 @@ export type LessonState = {
   id: LessonId | "drill";
   title: string;
   coach: string;
+  tier: LessonTier;
+  timing: LessonTiming;
   steps: LessonStep[];
   stepIndex: number;
   hits: number;
   misses: number;
   lastGrade: LessonGrade;
   lastPlayed: number | null;
+  /** Timing of the last correct note. `none` on an untimed lesson. */
+  lastTiming: TimingGrade;
+  /** Correct notes that also landed inside the good window, for the accuracy readout. */
+  onBeat: number;
+  /** Correct notes on a timed step, so onBeat has a denominator. */
+  timedNotes: number;
+  /** `performance.now()` of the last correct note, so gaps can be measured. */
+  lastHitAt: number | null;
 };
 
 export type TakeEvent = {
@@ -97,6 +135,7 @@ export type FxState = {
 export type InstrumentState = {
   ready: boolean;
   agentActing: string | null;
+  appMode: AppMode;
   lcdPage: LcdPage;
   presetName: string;
   style: PhraseStyle;

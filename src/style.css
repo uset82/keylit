@@ -37,6 +37,9 @@
   /* Floor for one white key. Below this the bed scrolls instead of shrinking —
      a key narrower than a fingertip is not playable. */
   --white-w:56px;
+  /* Note highway. Short by design: it competes with the keys for the same scarce
+     vertical space, and three beats of lookahead is all a beginner can read. */
+  --notefall-h:82px;
 
   /* signal — vibrant optical luminescent tokens */
   --you:231,195,106;        /* amber  = human  */
@@ -495,10 +498,39 @@ select.mini {
 
 .keybed-scroll::-webkit-scrollbar { display: none; }
 
+/* The note highway. Same min-width as .piano and the same inline left/width
+   percentages on every bar, so a bar sits over its key and both pan together
+   inside the one scroll container. */
+.notefall {
+  position: relative;
+  height: var(--notefall-h, 82px);
+  /* --whites is set by renderKeys: only the octaves the lesson needs. */
+  min-width: calc(var(--whites, 21) * var(--white-w));
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 26px),
+    linear-gradient(180deg, #05070a 0%, #0b0e13 100%);
+  border-bottom: 1px solid rgba(var(--next),.16);
+}
+
+.notefall-bar {
+  position: absolute;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(var(--next),.30), rgba(var(--next),.62));
+  box-shadow: inset 0 0 0 1px rgba(var(--next),.55), 0 0 10px rgba(var(--next),.22);
+  transition: bottom 160ms var(--ease-out);
+}
+
+.notefall-bar.now {
+  background: linear-gradient(180deg, rgba(var(--next),.62), rgba(var(--next),.95));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.5), 0 0 16px rgba(var(--next),.6);
+}
+
 .piano {
   position: relative;
   height: var(--keybed-h);
-  min-width: calc(21 * var(--white-w));
+  /* --whites is set by renderKeys: only the octaves the lesson needs. */
+  min-width: calc(var(--whites, 21) * var(--white-w));
   isolation: isolate;
   perspective: 1200px;
   perspective-origin: 50% 0%;
@@ -719,6 +751,38 @@ select.mini {
 
 /* Only worth showing when the bed actually overflows. */
 .keybed-tools .mini.hidden-pan { visibility: hidden; }
+
+/* Tempo lives above the keys rather than in the STUDIO drawer, because "play it
+   slower" is the first thing a stuck child needs and the drawer is collapsed in
+   teaching mode. */
+.tempo-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 6px;
+  margin-right: 2px;
+  border-right: 1px solid var(--well-line);
+}
+
+.bpm-label {
+  min-width: 58px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: var(--label);
+  font-variant-numeric: tabular-nums;
+}
+
+.tempo-slider {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  letter-spacing: .2em;
+  color: var(--label-dim);
+}
+
+.tempo-slider input { width: 116px; accent-color: rgb(var(--next)); }
 
 .hand-map {
   display: flex;
@@ -1196,6 +1260,41 @@ select.mini {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 0 14px rgba(var(--next),.32);
 }
 
+/* ── Modes ─────────────────────────────────────────────────────────────────
+   updateView writes one attribute on <body>; everything mode-specific hangs off
+   it here rather than off JS branches, so no element can be left in the wrong
+   mode by a missed code path. */
+body[data-mode="dj"] .teach-only { display: none !important; }
+body[data-mode="teach"] .dj-only { display: none !important; }
+
+.mode-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--well-line);
+  border-radius: 999px;
+  background: rgba(0,0,0,.28);
+}
+
+.mode-switch .chip {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  padding: 4px 12px;
+}
+
+.mode-switch .chip.live {
+  border-color: rgba(var(--next),.6);
+  background: rgba(var(--next),.14);
+  color: #eaf7ff;
+}
+
+.mode-switch .chip[data-mode-pick="dj"].live {
+  border-color: rgba(255,79,193,.65);
+  background: rgba(255,79,193,.16);
+  color: #ffe9f8;
+}
+
 .chat-transcript { grid-area: log; }
 
 .chat-transcript summary {
@@ -1424,6 +1523,99 @@ select.mini {
 .swatch.you      { --sig: var(--you); }
 .swatch.agent    { --sig: var(--agent); }
 
+/* ── Mode chooser ────────────────────────────────────────────────────────────
+   The first decision on the page. Two cards, because a child picking "make a
+   track" should never have to scroll past twelve lessons to find it. */
+.mode-pick {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode-card {
+  --sig: var(--next);
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 16px 18px 15px;
+  text-align: left;
+  border-radius: 8px;
+  border: 1px solid var(--well-line);
+  background: linear-gradient(180deg, #22262b 0%, #171a1e 55%, #101317 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 3px 8px rgba(0,0,0,.6);
+  cursor: pointer;
+  transition: border-color var(--t-ui), box-shadow var(--t-ui), transform var(--t-ui);
+}
+
+.mode-card.dj { --sig: 255,79,193; }
+
+.mode-card:hover { transform: translateY(-1px); border-color: rgba(var(--sig),.6); }
+
+.mode-card[aria-pressed="true"] {
+  border-color: rgba(var(--sig),.8);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 18px rgba(var(--sig),.24), 0 3px 8px rgba(0,0,0,.6);
+}
+
+.mode-card-led {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(0,0,0,.9);
+  background: #25282c;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.8);
+}
+
+.mode-card[aria-pressed="true"] .mode-card-led,
+.mode-card:hover .mode-card-led {
+  background: rgb(var(--sig));
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), 0 0 9px rgba(var(--sig),.9);
+}
+
+.mode-card em {
+  font-style: normal;
+  font-family: Tektur, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .24em;
+  color: rgba(var(--sig),.85);
+}
+
+.mode-card strong {
+  font-family: Syne, sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  color: #f1ede4;
+}
+
+.mode-card > span:last-child {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--label);
+}
+
+.dj-list {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--label);
+}
+
+.dj-list strong { color: #f1ede4; }
+
+.dj-note {
+  margin-top: 12px;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+}
+
 /* Bank sections */
 .intro-pick { margin-top: 22px; }
 
@@ -1459,9 +1651,11 @@ select.mini {
   color: var(--label-dim);
 }
 
+/* auto-fit rather than a fixed 5, because the banks are no longer all the same
+   size: First steps has six tiles and each tier has three. */
 .intro-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
   gap: 10px;
 }
 
@@ -1507,9 +1701,10 @@ select.mini {
   transition: background var(--t-ui), box-shadow var(--t-ui);
 }
 
-.tile-led.cyan  { --led-hue: var(--next); }
-.tile-led.amber { --led-hue: var(--you); }
-.tile-led.gold  { --led-hue: var(--you); }
+.tile-led.cyan   { --led-hue: var(--next); }
+.tile-led.amber  { --led-hue: var(--you); }
+.tile-led.gold   { --led-hue: var(--you); }
+.tile-led.violet { --led-hue: var(--landmark); }
 
 .lesson-tile:hover .tile-led {
   background: rgb(var(--led-hue));
@@ -1845,6 +2040,8 @@ select.mini {
 @media (max-width: 700px) {
   .intro-card { padding: 24px 20px 22px; }
   .intro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mode-pick { grid-template-columns: minmax(0, 1fr); }
+  .mode-card strong { font-size: 17px; }
   .intro-actions { margin-top: 22px; }
 }
 
@@ -1922,10 +2119,13 @@ select.mini {
 }
 
 @media (max-width: 640px) {
-  /* 48px still clears the 44px iOS target and fits SEVEN white keys — a whole
-     octave — where 64px fitted 5.3. Seeing an octave is what lets a child find
-     C, D and E in one glance instead of panning to hunt for them. */
-  :root { --white-w: 48px; --keybed-h: 168px; }
+  /* This is the FLOOR, not the key size. The bed is max(container, whites ×
+     floor) and keys are a percentage of that, so a 7-key lesson still renders
+     ~48px keys from the container width — the floor only decides whether a
+     range fits without panning. At 42px an 8-key range (the C major scale,
+     C4 up to C5) also fits. Keys are 168px tall, so the touch area is far
+     larger than the width alone suggests. */
+  :root { --white-w: 42px; --keybed-h: 168px; --notefall-h: 56px; }
 
   /* --- keys first ------------------------------------------------------
      The rack is a plain block, so making it a flex column lets `order` move
@@ -2045,11 +2245,13 @@ select.mini {
     padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
   }
 
-  /* "Start playing" was 341px below the fold, under ten tiles. Put it first. */
+  /* The mode choice and "Start playing" both have to sit above the fold; the
+     twelve lesson tiles are what the user scrolls for. */
   .intro-card { display: flex; flex-direction: column; padding: 18px 16px 16px; }
   .intro-head    { order: 1; }
-  .intro-actions { order: 2; margin-top: 16px; }
-  .intro-pick    { order: 3; margin-top: 18px; }
+  .mode-pick     { order: 2; margin-top: 16px; }
+  .intro-actions { order: 3; margin-top: 16px; }
+  .intro-pick    { order: 4; margin-top: 18px; }
   .intro-title { font-size: 40px; }
   .intro-legend { font-size: 11px; }
 }
@@ -2061,7 +2263,7 @@ select.mini {
    `pointer: coarse` is load-bearing: without it a desktop browser in a short
    window (or with devtools docked) also matches, and loses its whole UI. */
 @media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
-  :root { --keybed-h: min(46vh, 172px); --white-w: 52px; }
+  :root { --keybed-h: min(46vh, 172px); --white-w: 52px; --notefall-h: 44px; }
 
   .page-head,
   .chat-chips,

@@ -47,6 +47,10 @@ export const mountIntro = (arm: () => void): void => {
   intro.querySelectorAll<HTMLElement>("[data-recipe]").forEach((tile) => {
     tile.addEventListener("click", close);
   });
+  // Teaching reveals the tier list, so the overlay has to stay up. DJ mode has
+  // nothing left to pick here — its controls are the STUDIO drawer behind this
+  // card — so picking it goes straight through. mountMode sets the mode itself.
+  intro.querySelector<HTMLElement>('[data-mode-pick="dj"]')?.addEventListener("click", close);
   document.querySelectorAll<HTMLElement>("[data-intro-open]").forEach((button) => {
     button.addEventListener("click", open);
   });
