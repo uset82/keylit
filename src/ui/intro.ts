@@ -1,7 +1,7 @@
 /**
- * The optional songs-and-lessons picker. The playable keybed is the landing
- * surface; this panel is opened only when someone asks to browse lessons.
- * `arm` runs on the way out so choosing a lesson can also unlock audio.
+ * KEYLIT's main landing screen. It introduces the lesson library first, then
+ * hands the page to the keybed when someone starts playing. `arm` runs on the
+ * way out so that first gesture can also unlock audio.
  */
 export const mountIntro = (arm: () => void): void => {
   const intro = document.querySelector<HTMLElement>("#intro");
@@ -17,10 +17,6 @@ export const mountIntro = (arm: () => void): void => {
     intro.classList.remove("hidden");
     intro.scrollTop = 0;
   };
-
-  // The initial markup is already hidden to avoid flashing the picker before
-  // JavaScript starts. It remains available from the Songs button.
-  intro.classList.add("hidden");
 
   document.querySelector("#intro-start")?.addEventListener("click", close);
   document.querySelector("#intro-close-btn")?.addEventListener("click", close);
