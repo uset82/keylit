@@ -68,6 +68,13 @@ const RECIPES: Recipe[] = [
     say: "I play it once. Then you copy the glowing keys.",
   },
   {
+    // Above the plain /birthday/ below, which would otherwise swallow every one
+    // of these and start the two-handed version instead.
+    match: /(one|right) hand.*birthday|birthday.*(one|right) hand|(simple|easy|basic) (happy )?birthday|(happy )?birthday (basic|simple|easy)/,
+    steps: [{ tool: "start-lesson", input: { lesson: "birthday-basic" } }],
+    say: "Happy Birthday, one hand and all white keys. I light the next note, you play it.",
+  },
+  {
     match: /birthday|cumple/,
     steps: [{ tool: "start-lesson", input: { lesson: "birthday" } }],
     say: "Happy Birthday. I light the next note. You play it.",

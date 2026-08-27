@@ -59,6 +59,13 @@ type FingerMap = Partial<Record<number, Finger>>;
  */
 const RH_C: FingerMap = { 60: 1, 62: 2, 64: 3, 65: 4, 67: 5, 69: 5, 71: 5, 72: 5 };
 
+/**
+ * Right hand parked a fifth lower, thumb on the G below middle C. Happy Birthday
+ * starts on that G, and starting a beginner's hand there is what lets the first
+ * two lines be played without moving.
+ */
+const RH_G: FingerMap = { 55: 1, 57: 2, 59: 3, 60: 4, 62: 5 };
+
 /** A melody note as (midi, length in beats). */
 type SongNote = [midi: number, beats: number];
 
@@ -191,6 +198,60 @@ const TWINKLE = melody(
     return `${line} · note ${index + 1}. ${press(midi)}`;
   },
 ).steps;
+
+/**
+ * Happy Birthday for one hand — the song everybody actually wants to play first.
+ *
+ * The Tier 2 version is in F, which is where the tune normally lives, but F puts
+ * a B flat in the last line and a black key is a poor place for a first song. In
+ * C the whole melody is white keys, so this version is the same tune with the
+ * left hand and the accidental taken out.
+ *
+ * It still spans a full octave — the G below middle C up to the G above — which
+ * is more than five fingers cover, so it is taught in two positions with a single
+ * announced shift rather than pretending it fits under one hand. Lines 1 and 2
+ * sit with the thumb on the low G; from "dear" onward the hand moves up so the
+ * thumb is on middle C. That is exactly how it is taught on a real piano.
+ */
+const BIRTHDAY_BASIC = ((): LessonStep[] => {
+  const line = (
+    notes: SongNote[],
+    words: string,
+    position: FingerMap,
+    startBeat: number,
+    from = 1,
+  ): { steps: LessonStep[]; endBeat: number } =>
+    melody(notes, (midi, index) => `${words} · note ${index + from}. ${press(midi)}`, {
+      position,
+      startBeat,
+    });
+
+  const one = line([[55, 0.5], [55, 0.5], [57, 1], [55, 1], [60, 1], [59, 2]], "Happy birthday to you", RH_G, 0);
+  const two = line([[55, 0.5], [55, 0.5], [57, 1], [55, 1], [62, 1], [60, 2]], "Happy birthday to you", RH_G, one.endBeat);
+  // The third line straddles the shift: its first two notes are still the low G,
+  // then the hand moves up for the rest.
+  const threeLow = line([[55, 0.5], [55, 0.5]], "Happy birthday dear friend", RH_G, two.endBeat);
+  const threeHigh = line(
+    [[67, 1], [64, 1], [60, 1], [62, 1], [60, 2]],
+    "Happy birthday dear friend",
+    RH_C,
+    threeLow.endBeat,
+    3,
+  );
+  const four = line(
+    [[65, 0.5], [65, 0.5], [64, 1], [60, 1], [62, 1], [60, 2]],
+    "Happy birthday to you",
+    RH_C,
+    threeHigh.endBeat,
+  );
+
+  threeHigh.steps[0].coach =
+    "Happy birthday dear friend · note 3. The high one. Move your whole right hand up so your THUMB sits on middle C, then reach this G with finger 5.";
+  four.steps[0].coach =
+    "Happy birthday to you · note 1. Stay up here where you are now — finger 4 on F.";
+
+  return [...one.steps, ...two.steps, ...threeLow.steps, ...threeHigh.steps, ...four.steps];
+})();
 
 // ── Tier 2 · Intermediate ────────────────────────────────────────────────────
 
@@ -525,6 +586,15 @@ const LESSONS: LessonDef[] = [
     coach: "The whole five-finger position, C up to G — and finger 5 stretches to A.",
     steps: TWINKLE,
   },
+  {
+    id: "birthday-basic",
+    title: "Happy Birthday, one hand",
+    tier: "basic",
+    timing: "free",
+    bpm: 92,
+    coach: "The birthday song in C, right hand only — every note is a white key. Your hand moves once, and I tell you when.",
+    steps: BIRTHDAY_BASIC,
+  },
 
   // ── Tier 2 · Intermediate ───────────────────────────────────────────────────
   // Both hands, metronome running, timing shown but a late note still counts.
@@ -663,6 +733,21 @@ const LESSON_KEYWORDS: Array<{ id: LessonId; keys: string[] }> = [
   { id: "hot-cross-buns", keys: ["hot-cross-buns", "hot cross buns", "hot cross", "buns"] },
   { id: "mary-lamb", keys: ["mary-lamb", "mary had a little lamb", "little lamb", "mary", "lamb"] },
   { id: "twinkle", keys: ["twinkle", "star"] },
+  {
+    id: "birthday-basic",
+    // Longer than the plain "happy birthday" below, and KEYWORD_INDEX sorts by
+    // length, so these win without disturbing the two-handed version.
+    keys: [
+      "birthday-basic",
+      "happy birthday one hand",
+      "happy birthday right hand",
+      "happy birthday basic",
+      "simple happy birthday",
+      "easy happy birthday",
+      "birthday one hand",
+      "birthday basic",
+    ],
+  },
   { id: "ode", keys: ["ode to joy", "ode", "joy", "beethoven"] },
   { id: "birthday", keys: ["happy birthday", "birthday", "cumple"] },
   { id: "heart-and-soul", keys: ["heart-and-soul", "heart and soul", "heart & soul", "heart", "soul", "duet"] },
