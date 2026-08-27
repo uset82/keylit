@@ -187,13 +187,73 @@ export const warmCurrentPatches = async (): Promise<boolean> => {
   return warming;
 };
 
+/**
+ * iOS runs Web Audio in the `ambient` session by default, and `ambient` is muted
+ * by the physical Ring/Silent switch. A phone left on silent — which is most of
+ * them — plays nothing at all: keys glow, lessons advance, meter moves, no sound.
+ * `playback` is the category for media that should be heard regardless.
+ *
+ * Safari 16.4+. Feature-detected, and a no-op everywhere else.
+ */
+type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
+
+const claimAudioSession = (): void => {
+  try {
+    const nav = navigator as AudioSessionNavigator;
+    if (nav.audioSession) nav.audioSession.type = "playback";
+  } catch {
+    // Setting the session is best-effort; never let it break audio start-up.
+  }
+};
+
+/**
+ * Older iOS (pre-16.4) has no audioSession API. Playing one silent sample
+ * through the destination inside the unlocking gesture is the long-standing way
+ * to get the session out of its muted default.
+ */
+const kickSilentBuffer = (audio: AudioContext): void => {
+  try {
+    const source = audio.createBufferSource();
+    source.buffer = audio.createBuffer(1, 1, audio.sampleRate);
+    source.connect(audio.destination);
+    source.start(0);
+  } catch {
+    // Non-fatal.
+  }
+};
+
+/** True while the context exists but is not running — the app is visibly silent. */
+const syncAudioBlocked = (): void => {
+  const blocked = Boolean(context) && context!.state !== "running";
+  if (state.audioBlocked !== blocked) patchState({ audioBlocked: blocked });
+};
+
+/** iOS suspends the context on backgrounding, and can demote the session too. */
+const watchContext = (audio: AudioContext): void => {
+  audio.addEventListener("statechange", syncAudioBlocked);
+  const revive = (): void => {
+    if (document.visibilityState !== "visible") return;
+    claimAudioSession();
+    void audio.resume().catch(() => undefined).then(syncAudioBlocked);
+  };
+  document.addEventListener("visibilitychange", revive);
+  window.addEventListener("pageshow", revive);
+};
+
 export const initAudio = async (): Promise<void> => {
   if (initializing) return initializing;
   if (context && mix) {
-    void context.resume().catch(() => patchState({ ready: false }));
+    claimAudioSession();
+    void context
+      .resume()
+      .catch(() => patchState({ ready: false }))
+      .then(syncAudioBlocked);
     return;
   }
   initializing = (async () => {
+    // Claim the session BEFORE the context exists — on iOS the category is
+    // decided as the context starts, so setting it afterwards is too late.
+    claimAudioSession();
     context = new AudioContext({ latencyHint: "interactive" });
     mix = context.createGain();
     filter = context.createBiquadFilter();
@@ -226,7 +286,12 @@ export const initAudio = async (): Promise<void> => {
     // Trigger resume inside the touch event, but do not make visual/audio setup
     // wait for Safari's resume promise. Scheduled voices begin as soon as the
     // context transitions to running.
-    void context.resume().catch(() => patchState({ ready: false }));
+    kickSilentBuffer(context);
+    watchContext(context);
+    void context
+      .resume()
+      .catch(() => patchState({ ready: false }))
+      .then(syncAudioBlocked);
     // Do not hold the first note behind a network sample download. The light
     // local fallback plays immediately and the sampled piano replaces it as
     // soon as warming completes.

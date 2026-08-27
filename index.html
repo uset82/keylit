@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>KEYLIT — learn piano. The next key is already glowing.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -10,18 +10,26 @@
     <link rel="stylesheet" href="/src/tailwind.css" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body class="min-h-screen bg-ink text-[#e6e2d8] font-mono">
+  <body class="min-h-dvh bg-ink text-[#e6e2d8] font-mono">
     <div class="grain" aria-hidden="true"></div>
+
+    <button id="audio-blocked" class="audio-blocked hidden" type="button">
+      <span class="audio-blocked-icon" aria-hidden="true">🔇</span>
+      <span>
+        <strong>No sound?</strong>
+        Tap here, and check the side switch on your iPhone is not set to silent.
+      </span>
+    </button>
 
     <section id="intro" class="intro" aria-label="Welcome to KEYLIT">
       <div class="intro-card">
-        <button id="intro-close-btn" class="intro-close" type="button" aria-label="Close modal">✕</button>
+        <button id="intro-close-btn" class="intro-close" type="button" aria-label="Close console">✕</button>
+        
         <div class="intro-head">
-          <div class="flex items-center gap-2">
-            <span class="intro-badge">AI PIANO MENTOR</span>
-            <p class="intro-eyebrow">ANYONE CAN START · TODAY</p>
+          <div class="intro-plaque-wrap">
+            <p class="intro-plaque font-display"><span>KEYLIT</span></p>
+            <span class="intro-serial">STUDIO MASTER CONSOLE · REV 2.4</span>
           </div>
-          <h1 class="intro-title font-display">KEYLIT</h1>
           <p class="intro-lede">
             The next key is already glowing. You play it — and your teacher hears you on
             <em>this</em> page, then lights the one after. A chat in another tab cannot do that.
@@ -35,74 +43,81 @@
         </div>
 
         <div class="intro-pick">
-          <div class="flex items-center justify-between mb-2">
-            <p class="intro-kicker">First, find the note</p>
-            <span class="text-[10px] tracking-wider uppercase text-[#7c838a]">5 Fundamentals</span>
-          </div>
-          <div class="intro-grid">
-            <button class="lesson-tile" data-recipe="teach me" type="button">
-              <div class="tile-top"><span class="tile-tag">STEP 1</span><span class="tile-icon">🎹</span></div>
-              <em>Find any C</em>
-              <span>C sits left of every group of 2.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="first keys" type="button">
-              <div class="tile-top"><span class="tile-tag">STEP 2</span><span class="tile-icon">🎵</span></div>
-              <em>Play C D E</em>
-              <span>Three white keys in a row.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="finger numbers" type="button">
-              <div class="tile-top"><span class="tile-tag">STEP 3</span><span class="tile-icon">🖐️</span></div>
-              <em>Finger numbers</em>
-              <span>Thumb is 1. Little finger is 5.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="left hand" type="button">
-              <div class="tile-top"><span class="tile-tag">STEP 4</span><span class="tile-icon">👈</span></div>
-              <em>Left hand</em>
-              <span>The same five fingers, mirrored.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="both hands" type="button">
-              <div class="tile-top"><span class="tile-tag">STEP 5</span><span class="tile-icon">👐</span></div>
-              <em>Both hands</em>
-              <span>Low C and middle C together.</span>
-            </button>
+          <div class="console-bank">
+            <div class="bank-header">
+              <p class="intro-kicker"><span>BANK A</span> // FUNDAMENTALS</p>
+              <span class="bank-count">5 PRESETS</span>
+            </div>
+            <div class="intro-grid">
+              <button class="lesson-tile" data-recipe="teach me" type="button">
+                <div class="tile-bar"><span class="tile-num">01</span><span class="tile-led cyan"></span></div>
+                <em>Find any C</em>
+                <span>C sits left of every group of 2.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="first keys" type="button">
+                <div class="tile-bar"><span class="tile-num">02</span><span class="tile-led cyan"></span></div>
+                <em>Play C D E</em>
+                <span>Three white keys in a row.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="finger numbers" type="button">
+                <div class="tile-bar"><span class="tile-num">03</span><span class="tile-led cyan"></span></div>
+                <em>Finger numbers</em>
+                <span>Thumb is 1. Little finger is 5.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="left hand" type="button">
+                <div class="tile-bar"><span class="tile-num">04</span><span class="tile-led cyan"></span></div>
+                <em>Left hand</em>
+                <span>The same five fingers, mirrored.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="both hands" type="button">
+                <div class="tile-bar"><span class="tile-num">05</span><span class="tile-led cyan"></span></div>
+                <em>Both hands</em>
+                <span>Low C and middle C together.</span>
+              </button>
+            </div>
           </div>
 
-          <div class="flex items-center justify-between mb-2 mt-6">
-            <p class="intro-kicker">Then play a song</p>
-            <span class="text-[10px] tracking-wider uppercase text-[#7c838a]">5 Repertoire Pieces</span>
-          </div>
-          <div class="intro-grid">
-            <button class="lesson-tile" data-recipe="C scale" type="button">
-              <div class="tile-top"><span class="tile-tag">SCALE</span><span class="tile-icon">🎼</span></div>
-              <em>C major scale</em>
-              <span>Eight keys, no black ones.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="C chord" type="button">
-              <div class="tile-top"><span class="tile-tag">CHORD</span><span class="tile-icon">✨</span></div>
-              <em>C major chord</em>
-              <span>C, E, G — then hold all three.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="Twinkle" type="button">
-              <div class="tile-top"><span class="tile-tag">CLASSIC</span><span class="tile-icon">⭐</span></div>
-              <em>Twinkle Twinkle</em>
-              <span>The tune everybody knows.</span>
-            </button>
-            <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
-              <div class="tile-top"><span class="tile-tag">ANTHEM</span><span class="tile-icon">🏛️</span></div>
-              <em>Ode to Joy</em>
-              <span>Beethoven’s first phrase.</span>
-            </button>
-            <button class="lesson-tile hero" data-recipe="Happy Birthday" type="button">
-              <div class="tile-top"><span class="tile-tag gold">FEATURED</span><span class="tile-icon">🎂</span></div>
-              <em>Happy Birthday</em>
-              <span>The whole song, one key at a time.</span>
-            </button>
+          <div class="console-bank mt-5">
+            <div class="bank-header">
+              <p class="intro-kicker"><span>BANK B</span> // REPERTOIRE</p>
+              <span class="bank-count">5 TRACKS</span>
+            </div>
+            <div class="intro-grid">
+              <button class="lesson-tile" data-recipe="C scale" type="button">
+                <div class="tile-bar"><span class="tile-num">06</span><span class="tile-led amber"></span></div>
+                <em>C major scale</em>
+                <span>Eight keys, no black ones.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="C chord" type="button">
+                <div class="tile-bar"><span class="tile-num">07</span><span class="tile-led amber"></span></div>
+                <em>C major chord</em>
+                <span>C, E, G — then hold all three.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="Twinkle" type="button">
+                <div class="tile-bar"><span class="tile-num">08</span><span class="tile-led amber"></span></div>
+                <em>Twinkle Twinkle</em>
+                <span>The tune everybody knows.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
+                <div class="tile-bar"><span class="tile-num">09</span><span class="tile-led amber"></span></div>
+                <em>Ode to Joy</em>
+                <span>Beethoven’s first phrase.</span>
+              </button>
+              <button class="lesson-tile hero" data-recipe="Happy Birthday" type="button">
+                <div class="tile-bar"><span class="tile-num gold">10</span><span class="tile-led gold"></span></div>
+                <em>Happy Birthday</em>
+                <span>The whole song, one key at a time.</span>
+              </button>
+            </div>
           </div>
         </div>
 
         <div class="intro-actions">
-          <button id="intro-start" class="generate lg" type="button">Start playing ⚡</button>
-          <p class="intro-note">Turns on high-fidelity audio & auto-detects USB/Bluetooth MIDI. Pick a lesson or explore freely.</p>
+          <button id="intro-start" class="generate lg" type="button">
+            <span class="pilot-dot"></span>
+            ENGAGE ENGINE · START PLAYING
+          </button>
+          <p class="intro-note">Arms Web Audio & auto-detects USB/Bluetooth MIDI. Select any preset or play freely.</p>
         </div>
       </div>
     </section>

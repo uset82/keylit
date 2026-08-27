@@ -502,7 +502,10 @@ select.mini {
   isolation: isolate;
   perspective: 1200px;
   perspective-origin: 50% 0%;
-  touch-action: none;
+  /* pan-x, not none: a horizontal drag pans the bed, a press still plays.
+     The pointer handlers preventDefault and handle pointercancel, so a drag
+     that becomes a scroll releases its note cleanly. */
+  touch-action: pan-x;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -542,7 +545,7 @@ select.mini {
   appearance: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  touch-action: none;
+  touch-action: pan-x;
   transform-origin: 50% 0%;
   transform: rotateX(4deg);
   animation: key-in 420ms var(--ease-out) backwards;
@@ -1270,7 +1273,7 @@ select.mini {
 }
 
 /* ============================================================
-   INTRO — frosted glass floating HUD with glowing lesson cards
+   INTRO — STUDIO MASTER CONSOLE (Machined Aluminum Patch Matrix)
    ============================================================ */
 
 .intro {
@@ -1281,104 +1284,123 @@ select.mini {
   overscroll-behavior: contain;
   padding: 32px 20px;
   background:
-    radial-gradient(900px 500px at 50% 0%, rgba(94,200,255,.14) 0%, transparent 65%),
-    radial-gradient(700px 400px at 85% 15%, rgba(157,255,106,.10) 0%, transparent 60%),
-    rgba(6,8,12,.88);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+    radial-gradient(900px 500px at 50% -8%, rgba(255,255,255,.05) 0%, transparent 65%),
+    radial-gradient(600px 400px at 85% 15%, rgba(0,0,0,.9) 0%, transparent 70%),
+    rgba(6,7,8,.94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .intro-card {
   position: relative;
   width: min(920px, 100%);
   margin: auto;
-  padding: 36px 36px 32px;
-  border: 1px solid var(--glass-border-bright);
-  border-radius: 20px;
-  background:
-    radial-gradient(800px 300px at 50% -20px, rgba(94,200,255,0.08) 0%, transparent 70%),
-    linear-gradient(180deg, rgba(26, 32, 46, 0.90) 0%, rgba(14, 18, 26, 0.95) 100%);
+  padding: 32px 34px 28px;
+  border-radius: var(--r-chassis);
+  border: 1px solid var(--chassis-edge);
+  background-image:
+    var(--screw), var(--screw), var(--screw), var(--screw),
+    linear-gradient(180deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 140px),
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.018) 0 1px, rgba(0,0,0,.024) 1px 2px,
+      rgba(255,255,255,.010) 2px 3px, transparent 3px 5px),
+    linear-gradient(180deg, var(--chassis-hi) 0%, var(--chassis-1) 18%,
+                            var(--chassis-2) 72%, var(--chassis-3) 100%);
+  background-repeat: no-repeat;
+  background-size: 16px 16px, 16px 16px, 16px 16px, 16px 16px, auto, auto, auto;
+  background-position:
+    14px 14px,
+    calc(100% - 14px) 14px,
+    14px calc(100% - 14px),
+    calc(100% - 14px) calc(100% - 14px),
+    0 0, 0 0, 0 0;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.20),
-    inset 0 0 30px rgba(0,0,0,.5),
-    0 30px 100px rgba(0,0,0,.85),
-    0 0 40px rgba(94,200,255,.12);
-  animation: intro-rise 420ms var(--ease-out) backwards;
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(0,0,0,.85),
+    inset 0 0 60px rgba(0,0,0,.45),
+    0 35px 90px rgba(0,0,0,.85);
+  animation: intro-rise 400ms var(--ease-out) backwards;
 }
 
 .intro-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 32px;
-  height: 32px;
-  border-radius: 99px;
-  border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.06);
-  color: var(--label-dim);
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--chassis-edge);
+  background: linear-gradient(180deg, #2b2e32 0%, #17191b 100%);
+  color: var(--label);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-family: Tektur, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 2px 5px rgba(0,0,0,.6);
   transition: all var(--t-ui) var(--ease-out);
 }
 
 .intro-close:hover {
-  background: rgba(255,255,255,0.15);
+  border-color: var(--hairline);
   color: #fff;
-  border-color: rgba(255,255,255,0.3);
-  transform: scale(1.05);
+  background: linear-gradient(180deg, #383c42 0%, #1e2124 100%);
 }
 
-.intro-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border-radius: 99px;
-  background: rgba(94,200,255,0.15);
-  border: 1px solid rgba(94,200,255,0.4);
-  color: rgb(var(--next));
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  box-shadow: 0 0 12px rgba(94,200,255,0.25);
+.intro-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--well-line);
 }
 
-.intro-eyebrow {
-  font-size: 11px;
-  letter-spacing: .35em;
-  color: rgba(231,195,106,.9);
+.intro-plaque-wrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.intro-title {
-  margin-top: 6px;
-  font-family: var(--font-brand), sans-serif;
-  font-weight: 800;
-  font-size: clamp(48px, 8vw, 82px);
-  line-height: .92;
-  letter-spacing: .02em;
-  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.intro-plaque {
+  display: inline-block;
+  padding: 6px 18px 5px;
+  border-radius: 4px;
+  border: 1px solid #000;
+  background: linear-gradient(180deg, #1f2226 0%, #0d0f11 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 2px 6px rgba(0,0,0,.7);
+  font-size: 26px;
+  letter-spacing: .22em;
+  color: #f1ede4;
+  text-shadow: 0 1px 2px #000;
+}
+
+.intro-serial {
+  font-size: 10px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--label-dim);
 }
 
 .intro-lede {
-  max-width: 58ch;
+  max-width: 60ch;
   margin-top: 14px;
-  font-family: var(--font-ui), sans-serif;
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.6;
   color: #b9bfc4;
 }
 
-.intro-lede em { font-style: normal; font-weight: 600; color: rgb(var(--next)); }
+.intro-lede em {
+  font-style: normal;
+  color: rgb(var(--next));
+  font-weight: 600;
+}
 
 .intro-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 20px;
-  margin-top: 18px;
+  gap: 8px 22px;
+  margin-top: 16px;
   font-size: 10px;
   letter-spacing: .18em;
   text-transform: uppercase;
@@ -1387,11 +1409,13 @@ select.mini {
 
 .intro-legend li { display: flex; align-items: center; gap: 8px; }
 
+/* Pilot Lamp Swatches */
 .swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
-  box-shadow: 0 0 12px rgba(var(--sig), .75);
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(0,0,0,0.8);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.5), 0 0 10px rgba(var(--sig), .8);
   background: rgb(var(--sig));
 }
 
@@ -1400,15 +1424,39 @@ select.mini {
 .swatch.you      { --sig: var(--you); }
 .swatch.agent    { --sig: var(--agent); }
 
-.intro-pick { margin-top: 28px; }
+/* Bank sections */
+.intro-pick { margin-top: 22px; }
+
+.console-bank {
+  background: var(--well);
+  padding: 14px 16px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--well-line);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.7);
+}
+
+.bank-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
 
 .intro-kicker {
-  font-family: var(--font-display), sans-serif;
-  font-size: 12px;
+  font-family: Tektur, sans-serif;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .25em;
   text-transform: uppercase;
-  color: #e2e8f0;
+  color: var(--label);
+}
+
+.intro-kicker span { color: #f1ede4; }
+
+.bank-count {
+  font-size: 9px;
+  letter-spacing: .2em;
+  color: var(--label-dim);
 }
 
 .intro-grid {
@@ -1417,88 +1465,113 @@ select.mini {
   gap: 10px;
 }
 
+/* Tactile Console Push-Buttons */
 .lesson-tile {
   display: grid;
   align-content: start;
-  gap: 6px;
-  padding: 13px 14px 12px;
+  gap: 5px;
+  padding: 11px 12px 10px;
   text-align: left;
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(30, 37, 50, 0.75) 0%, rgba(16, 20, 28, 0.85) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.45);
-  transition: all var(--t-ui) var(--ease-out);
+  border: 1px solid var(--chassis-edge);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #2c3035 0%, #1b1d20 50%, #121416 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 -1px 0 rgba(0,0,0,.9),
+    0 2px 5px rgba(0,0,0,.6);
+  transition: border-color var(--t-ui), background var(--t-ui), transform 70ms var(--ease-key), box-shadow 70ms;
   cursor: pointer;
 }
 
-.tile-top {
+.tile-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2px;
 }
 
-.tile-tag {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.08);
-  color: var(--label);
+.tile-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  color: var(--label-dim);
 }
 
-.tile-tag.gold {
-  background: rgba(231,195,106,0.2);
-  color: #f6dc90;
-  border: 1px solid rgba(231,195,106,0.4);
+.tile-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  border: 1px solid rgba(0,0,0,.9);
+  background: #25282c;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.8);
+  transition: background var(--t-ui), box-shadow var(--t-ui);
 }
 
-.tile-icon { font-size: 13px; }
+.tile-led.cyan  { --led-hue: var(--next); }
+.tile-led.amber { --led-hue: var(--you); }
+.tile-led.gold  { --led-hue: var(--you); }
+
+.lesson-tile:hover .tile-led {
+  background: rgb(var(--led-hue));
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), 0 0 8px rgba(var(--led-hue), .9);
+}
 
 .lesson-tile em {
   font-style: normal;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
+  font-family: Tektur, sans-serif;
   font-size: 13px;
-  letter-spacing: .03em;
-  color: #f8fafc;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--text);
+  line-height: 1.25;
 }
 
 .lesson-tile span {
-  font-family: var(--font-ui), sans-serif;
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: 10px;
+  line-height: 1.4;
   color: var(--label-dim);
 }
 
 .lesson-tile:hover {
-  border-color: rgba(var(--next),.65);
-  background: linear-gradient(180deg, rgba(38, 48, 66, 0.85) 0%, rgba(20, 26, 38, 0.95) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 0 20px rgba(94,200,255,.35), 0 6px 16px rgba(0,0,0,.5);
-  transform: translateY(-2px);
+  border-color: var(--hairline);
+  background: linear-gradient(180deg, #363b42 0%, #22252a 50%, #16181b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -1px 0 rgba(0,0,0,.9),
+    0 3px 8px rgba(0,0,0,.7);
 }
 
-.lesson-tile:hover em { color: rgb(var(--next)); }
-.lesson-tile:hover span { color: #d1d5db; }
-.lesson-tile:active { transform: translateY(1px); }
+.lesson-tile:hover em { color: #fff; }
+.lesson-tile:hover span { color: var(--label); }
+
+.lesson-tile:active {
+  transform: translateY(2px);
+  background: linear-gradient(180deg, #151719 0%, #1f2226 100%);
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,.8),
+    0 1px 2px rgba(0,0,0,.4);
+}
 
 .lesson-tile:focus-visible {
   outline: 2px solid var(--led-green);
   outline-offset: 2px;
 }
 
+/* Featured Hero Preset (Happy Birthday) */
 .lesson-tile.hero {
-  border-color: rgba(var(--you),.5);
-  background: linear-gradient(180deg, rgba(48, 38, 22, 0.85) 0%, rgba(26, 21, 14, 0.95) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 18px rgba(var(--you),.25), 0 4px 12px rgba(0,0,0,.45);
+  border-color: rgba(var(--you),.35);
+  background: linear-gradient(180deg, #332b1d 0%, #1f1b13 50%, #14110b 100%);
 }
 
 .lesson-tile.hero em { color: #f6dc90; }
 
 .lesson-tile.hero:hover {
-  border-color: rgba(var(--you),.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 0 25px rgba(var(--you),.5), 0 6px 18px rgba(0,0,0,.5);
+  border-color: rgba(var(--you),.75);
+  background: linear-gradient(180deg, #423824 0%, #292418 50%, #1a160d 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.2),
+    0 0 16px rgba(var(--you),.3),
+    0 3px 8px rgba(0,0,0,.7);
 }
 
 .intro-actions {
@@ -1506,37 +1579,47 @@ select.mini {
   flex-wrap: wrap;
   align-items: center;
   gap: 16px;
-  margin-top: 28px;
-  padding-top: 22px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--well-line);
 }
 
 .generate.lg {
-  padding: 14px 34px;
-  font-family: var(--font-display), sans-serif;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 28px;
+  font-family: Tektur, sans-serif;
+  font-size: 13px;
   font-weight: 700;
-  border-radius: 12px;
-  box-shadow: 0 0 24px rgba(231,195,106,.45), 0 4px 12px rgba(0,0,0,.4);
-  transition: all var(--t-ui) var(--ease-out);
+  letter-spacing: .12em;
 }
 
-.generate.lg:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 32px rgba(231,195,106,.65), 0 6px 18px rgba(0,0,0,.5);
+.pilot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: #1b1509;
+  border: 1px solid rgba(0,0,0,.8);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.8);
+  transition: all var(--t-ui);
+}
+
+.generate.lg:hover .pilot-dot {
+  background: #fff;
+  box-shadow: 0 0 8px #fff;
 }
 
 .intro-note {
   flex: 1;
   min-width: 200px;
-  font-family: var(--font-ui), sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.5;
   color: var(--label-dim);
 }
 
 /* ============================================================
-   CELEBRATION MODAL — Star rating & Song Accomplishment
+   CELEBRATION MODAL — Studio Tally Plaque & Filament Lamps
    ============================================================ */
 
 .celebration-backdrop {
@@ -1547,102 +1630,118 @@ select.mini {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(4, 6, 10, 0.85);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: rgba(6, 7, 8, 0.92);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   animation: intro-rise 300ms var(--ease-out) backwards;
 }
 
 .celebration-card {
-  width: min(480px, 100%);
-  padding: 36px 32px;
+  position: relative;
+  width: min(500px, 100%);
+  padding: 34px 32px 30px;
   text-align: center;
-  border-radius: 20px;
-  border: 1px solid rgba(231,195,106,.5);
-  background:
-    radial-gradient(400px 200px at 50% 0%, rgba(231,195,106,0.18) 0%, transparent 70%),
-    linear-gradient(180deg, rgba(28, 24, 16, 0.95) 0%, rgba(14, 12, 8, 0.98) 100%);
+  border-radius: var(--r-chassis);
+  border: 1px solid var(--chassis-edge);
+  background-image:
+    var(--screw), var(--screw), var(--screw), var(--screw),
+    linear-gradient(180deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 100px),
+    linear-gradient(180deg, var(--chassis-hi) 0%, var(--chassis-1) 20%,
+                            var(--chassis-2) 75%, var(--chassis-3) 100%);
+  background-repeat: no-repeat;
+  background-size: 14px 14px, 14px 14px, 14px 14px, 14px 14px, auto, auto;
+  background-position:
+    12px 12px,
+    calc(100% - 12px) 12px,
+    12px calc(100% - 12px),
+    calc(100% - 12px) calc(100% - 12px),
+    0 0, 0 0;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.25),
-    0 24px 80px rgba(0,0,0,.85),
-    0 0 50px rgba(231,195,106,.3);
-  animation: celebration-pop 400ms var(--ease-out) backwards;
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(0,0,0,.85),
+    0 30px 80px rgba(0,0,0,.9);
+  animation: celebration-pop 350ms var(--ease-out) backwards;
 }
 
 .celebration-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 99px;
-  background: rgba(231,195,106,0.2);
-  border: 1px solid rgba(231,195,106,0.5);
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid #000;
+  background: linear-gradient(180deg, #1f2226 0%, #0d0f11 100%);
   color: #f6dc90;
-  font-size: 10px;
+  font-family: Tektur, sans-serif;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 2px 4px rgba(0,0,0,.6);
 }
 
 .star-rating {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
   margin: 12px 0 18px;
-  font-size: 40px;
-  color: #554830;
+  font-size: 32px;
+  color: #2b2e32;
 }
 
 .star.lit {
-  color: #ffb703;
-  text-shadow: 0 0 20px rgba(255, 183, 3, 0.8), 0 0 40px rgba(255, 183, 3, 0.4);
-  animation: star-bounce 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+  color: #ffc038;
+  text-shadow: 0 0 16px rgba(255, 192, 56, 0.85), 0 0 32px rgba(255, 192, 56, 0.4);
+  animation: star-bounce 450ms cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
 }
 
-.star:nth-child(2) { animation-delay: 100ms; }
-.star:nth-child(3) { animation-delay: 200ms; }
+.star:nth-child(2) { animation-delay: 90ms; }
+.star:nth-child(3) { animation-delay: 180ms; }
 
 .celebration-title {
-  font-family: var(--font-brand), sans-serif;
-  font-size: 32px;
-  font-weight: 800;
-  color: #f8fafc;
-  margin-bottom: 8px;
+  font-family: Tektur, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #f1ede4;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 2px #000;
 }
 
 .celebration-msg {
-  font-family: var(--font-ui), sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
-  color: #cbd5e1;
-  margin-bottom: 24px;
+  color: #9da3a8;
+  margin-bottom: 22px;
 }
 
 .celebration-stats {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 28px;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .stat-pill {
   display: flex;
   flex-direction: column;
-  padding: 10px 18px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  padding: 8px 16px;
+  border-radius: 4px;
+  background: var(--well);
+  border: 1px solid var(--well-line);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.8);
 }
 
 .stat-pill span {
-  font-family: var(--font-display), sans-serif;
-  font-size: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
   font-weight: 700;
-  color: rgb(var(--agent));
+  color: var(--led-green);
+  text-shadow: 0 0 8px rgba(157,255,106,.5);
 }
 
 .stat-pill em {
   font-style: normal;
-  font-size: 10px;
-  letter-spacing: 0.15em;
+  font-size: 8px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--label-dim);
 }
@@ -1766,6 +1865,235 @@ select.mini {
   :root { --keybed-h: 160px; }
   .chat-bar { gap: 6px 14px; }
   .lcd { min-height: 120px; }
+}
+
+/* ============================================================
+   PHONE  —  everything below is what makes this usable on an iPhone.
+   Ordered after the max-height rules so --keybed-h here actually wins: the
+   earlier max-width:900 value was dead, silently overwritten by max-height.
+   ============================================================ */
+
+/* No-sound banner. Web Audio on iOS is muted by the Ring/Silent switch unless
+   the audio session is promoted, so when the context will not run we say so
+   rather than leaving the user tapping a silent piano. */
+.audio-blocked {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--you), .5);
+  background: #24201a;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,.6);
+}
+
+.audio-blocked strong { color: rgb(var(--you)); display: block; }
+.audio-blocked-icon { font-size: 20px; flex-shrink: 0; }
+
+/* Edge fades: the scrollbar is hidden by design, so without these there is no
+   cue at all that the bed continues past the screen. */
+.keybed-scroll { position: relative; }
+
+.keybed-scroll.can-pan-left.can-pan-right {
+  -webkit-mask-image: linear-gradient(90deg,
+    transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg,
+    transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+}
+
+.keybed-scroll.can-pan-left:not(.can-pan-right) {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 100%);
+}
+
+.keybed-scroll.can-pan-right:not(.can-pan-left) {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 22px), transparent 100%);
+}
+
+@media (max-width: 640px) {
+  /* 48px still clears the 44px iOS target and fits SEVEN white keys — a whole
+     octave — where 64px fitted 5.3. Seeing an octave is what lets a child find
+     C, D and E in one glance instead of panning to hunt for them. */
+  :root { --white-w: 48px; --keybed-h: 168px; }
+
+  /* --- keys first ------------------------------------------------------
+     The rack is a plain block, so making it a flex column lets `order` move
+     the keys above the studio gear with no DOM or JS change. updateView()
+     keeps writing to every element it already owns. */
+  .rack-face { display: flex; flex-direction: column; padding: 12px 14px 0; }
+
+  .rack-face > .flex          { order: 1; flex-wrap: wrap; gap: 10px; }
+  .rack-face > .strip-row     { order: 2; }
+  .rack-face > .keybed-bar    { order: 3; }
+  .rack-face > .hand-map      { order: 4; }
+  .rack-face > .keybed-scroll { order: 5; }
+  .rack-face > .mt-4.grid     { order: 90; }
+  .rack-face > .studio        { order: 95; }
+
+  /* The bed bleeds to the case edge; match the reduced rack padding. */
+  .keybed-scroll { margin: 10px -14px 0; }
+
+  main {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .page-head {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  .chat-bar-wrap {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  /* --- iOS zoom-on-focus ----------------------------------------------
+     Safari zooms the whole layout when a focused control is under 16px, and
+     never zooms back out. This is the single most "broken"-feeling bug on the
+     page, and 16px is the entire fix. Deliberately NOT maximum-scale=1, which
+     would break pinch-zoom for low-vision users. */
+  .agent-input,
+  select.ghost-btn,
+  select.mini { font-size: 16px; }
+
+  .agent-input { padding: 10px 12px; }
+
+  /* --- tap targets ----------------------------------------------------- */
+  .chip, .mini, .ghost-btn {
+    min-height: 44px;
+    font-size: 12px;
+    padding: 10px 14px;
+    letter-spacing: .08em;
+  }
+
+  /* Nine 44px chips wrapped to four rows cost 203px — more than the keybed.
+     One horizontally-scrolling row keeps every chip reachable at full size
+     while giving 160px of that back to the keys. */
+  .chat-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .chat-chips::-webkit-scrollbar { display: none; }
+  .chat-chips .chip { min-height: 44px; font-size: 12px; padding: 10px 14px; flex: 0 0 auto; }
+  .generate { min-height: 44px; }
+
+  /* --- reclaim vertical space so the keys land on the first screen ------
+     Everything hidden here is either duplicated elsewhere or is studio
+     furniture a first-time player does not need. */
+
+  /* The chat bar already says who is talking; the page header is a second
+     wordmark plus MIDI/sustain readouts that mean nothing to a beginner. */
+  .page-head { display: none; }
+
+  /* Third wordmark, inside the rack. The chassis is identifiable without it. */
+  .rack-face > .flex > .logo-plaque { display: none; }
+
+  /* Duet readout is secondary; the lesson strip is the one that teaches. */
+  #duet-strip { display: none; }
+
+  /* The legend lives on the intro screen, in full, with colour swatches. */
+  .keybed-legend { display: none; }
+
+  /* Collapsed transcript is a power-user affordance. */
+  .chat-transcript { display: none; }
+  .keybed-tools .mini { min-width: 44px; padding: 10px; }
+
+  .studio-summary,
+  .chat-transcript summary { min-height: 44px; display: flex; align-items: center; }
+
+  .chat-transcript summary { font-size: 12px; }
+  .intro-close { width: 44px; height: 44px; font-size: 16px; }
+
+  /* Legend wraps under the buttons instead of being crushed into ~130px. */
+  .keybed-bar { flex-wrap: wrap; gap: 8px; }
+  .keybed-legend { order: 2; flex-basis: 100%; font-size: 11px; letter-spacing: .1em; }
+  .keybed-tools { order: 1; }
+
+  /* Readability: 8-11px uppercase with heavy tracking is unreadable at arm's
+     length, and the tracking inflates every string's width. */
+  .lesson-strip, .duet-strip { font-size: 12px; letter-spacing: .06em; }
+  .chat-coach { font-size: 14px; min-width: 0; }
+  .key-name { font-size: 10px; }
+
+  /* --- intro ------------------------------------------------------------
+     A full-screen blur recomposited on every scroll frame is the most
+     expensive thing on the first screen the user ever sees. */
+  .intro {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: #0c0f14;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  /* "Start playing" was 341px below the fold, under ten tiles. Put it first. */
+  .intro-card { display: flex; flex-direction: column; padding: 18px 16px 16px; }
+  .intro-head    { order: 1; }
+  .intro-actions { order: 2; margin-top: 16px; }
+  .intro-pick    { order: 3; margin-top: 18px; }
+  .intro-title { font-size: 40px; }
+  .intro-legend { font-size: 11px; }
+}
+
+/* --- landscape phone: the orientation a keyboard actually wants ----------
+   Strip the page down to one instruction line and a full-height keybed. */
+/* A phone in landscape is ~844px WIDE, so none of the max-width:640 rules above
+   apply here — this block has to stand on its own.
+   `pointer: coarse` is load-bearing: without it a desktop browser in a short
+   window (or with devtools docked) also matches, and loses its whole UI. */
+@media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+  :root { --keybed-h: min(46vh, 172px); --white-w: 52px; }
+
+  .page-head,
+  .chat-chips,
+  .chat-transcript,
+  .studio,
+  .rack-face > .mt-4.grid,
+  .rack-face > .flex,
+  .strip-row,
+  .keybed-legend,
+  .chat-take { display: none; }
+
+  .chat-bar-wrap {
+    padding: 4px max(10px, env(safe-area-inset-right)) 2px max(10px, env(safe-area-inset-left));
+  }
+
+  .chat-bar { gap: 4px; padding: 6px 12px; }
+  .chat-line { gap: 8px; }
+  .chat-coach { font-size: 13px; min-width: 0; }
+  .chat-form { width: min(340px, 100%); }
+  .agent-input { font-size: 16px; padding: 6px 10px; }
+
+  main {
+    padding-top: 0;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+
+  .rack-face { padding: 6px 12px 0; }
+  .keybed-scroll { margin: 6px -12px 0; }
+  .keybed-bar { margin-top: 4px; }
+  .keybed-tools .mini { min-height: 40px; min-width: 40px; padding: 8px; }
 }
 
 /* keep last */
