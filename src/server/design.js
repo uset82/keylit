@@ -110,6 +110,63 @@ const cleanSheet = (sheet) =>
     .filter(Boolean)
     .join("\n");
 
+/**
+ * The network model is an enhancement, not the only way this endpoint can be
+ * useful.  The client already has an offline word mapper for the same reason,
+ * but a direct /api/design caller used to receive a 502 whenever OpenRouter was
+ * slow, rate-limited, or returned prose.  Keep a small, import-free equivalent
+ * here so the hosted API has a valid playable answer too.
+ */
+const localPatch = (description) => {
+  const text = clean(description, MAX_DESCRIPTION);
+  const lower = text.toLowerCase();
+  const has = (expression) => expression.test(lower);
+  const percussive = has(/\b(stab|staccato|percussive|sharp|slap|pluck|hit|strike)\b/);
+  const bright = has(/\b(metallic|digital|bell|glass|bright|sharp|shimmer|crisp)\b/);
+  const gritty = has(/\b(metallic|industrial|raw|rough|distort|grit|crush|brutal)\b/);
+  const spacious = has(/\b(hall|cathedral|cavern|wide|space|echo|delay|reverb|ambient)\b/);
+  const huge = has(/\b(thunder|orchestr|cinematic|epic|huge|massive|dramatic)\b/);
+
+  let sampleId = "pn-ivory";
+  if (has(/\b(felt|soft|intimate)\b/)) sampleId = "pn-felt";
+  else if (has(/\b(chapel|church|pipe organ)\b/)) sampleId = "or-chapel";
+  else if (has(/\b(drawbar|hammond|jazz organ|organ)\b/)) sampleId = "or-reed";
+  else if (bright) sampleId = "sy-rail";
+  else if (has(/\b(wurli|wurlitzer|rhodes|electric piano)\b/)) sampleId = "sy-razor";
+  else if (has(/\b(bass|sub|low end|upright)\b/)) sampleId = "bs-sub";
+  else if (huge) sampleId = "ml-stack";
+  else if (has(/\b(string|ensemble|pad)\b/)) sampleId = "ok-bloom";
+
+  const title = (text.match(/[a-z0-9]+/gi) ?? [])
+    .filter((word) => word.length > 2)
+    .slice(0, 2)
+    .join(" ")
+    .toUpperCase()
+    .slice(0, 22) || "LOCAL PATCH";
+
+  return {
+    reply: `I made a ${title.toLowerCase()} patch with KEYLIT's local sound designer.`,
+    patch: {
+      presetName: title,
+      layerA: { sampleId, volume: 0.9, transpose: 0 },
+      layerB: huge ? { sampleId: sampleId === "ok-bloom" ? "bs-sub" : "ok-bloom", volume: 0.32, transpose: 0 } : { sampleId: "ok-bloom", volume: 0, transpose: 0 },
+      adsr: {
+        attack: percussive ? 0.001 : huge ? 0.18 : 0.03,
+        decay: percussive ? 0.18 : 0.45,
+        sustain: percussive ? 0.24 : 0.58,
+        release: percussive ? 0.14 : spacious ? 1.5 : 0.65,
+      },
+      fx: {
+        filter: bright ? 0.9 : 0.72,
+        distortion: gritty ? 0.28 : 0,
+        crush: has(/\b(bitcrush|8-bit|lo-fi|glitch)\b/) ? 0.28 : 0,
+        delay: spacious ? 0.24 : 0.06,
+        reverb: spacious ? 0.64 : huge ? 0.44 : 0.16,
+      },
+    },
+  };
+};
+
 /** Models wrap JSON in prose or fences often enough to be worth handling. */
 const parseJson = (text) => {
   if (!text) return null;
@@ -198,7 +255,11 @@ export const designReply = async ({ description, sheet, apiKey, ip, fetchImpl })
     // for: the page has an offline mapper ready the moment this returns.
     if (Date.now() - startedAt > SECOND_MODEL_BUDGET_MS) break;
   }
-  return { status: 502, json: { error: "no-usable-reply" } };
+  const fallback = localPatch(text);
+  return {
+    status: 200,
+    json: { ...fallback, phrase: null, model: "local-fallback" },
+  };
 };
 
 /** Fetch-standard adapter, used by the Sites worker. */
