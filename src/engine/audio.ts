@@ -36,6 +36,8 @@ let analyser: AnalyserNode | null = null;
 let convolver: ConvolverNode | null = null;
 let mix: GainNode | null = null;
 let warming: Promise<boolean> = Promise.resolve(false);
+let initializing: Promise<void> | null = null;
+let crushLoading: Promise<void> | null = null;
 
 const crushWorklet = `
 class CrushProcessor extends AudioWorkletProcessor {
@@ -138,6 +140,37 @@ export const applyFx = (): void => {
   if (crushAmount) crushAmount.setValueAtTime(state.fx.crush, context.currentTime);
 };
 
+const upgradeCrushInBackground = (): void => {
+  if (!context || !shaper || !dry || !delay || !convolver || crush || crushLoading) return;
+  const audio = context;
+  const source = shaper;
+  const dryTarget = dry;
+  const delayTarget = delay;
+  const reverbTarget = convolver;
+  const blob = new Blob([crushWorklet], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  crushLoading = (async () => {
+    try {
+      await audio.audioWorklet.addModule(url);
+      if (context !== audio || shaper !== source) return;
+      const upgraded = new AudioWorkletNode(audio, "crush-processor");
+      source.disconnect();
+      source.connect(upgraded);
+      upgraded.connect(dryTarget);
+      upgraded.connect(delayTarget);
+      upgraded.connect(reverbTarget);
+      crush = upgraded;
+      applyFx();
+    } catch {
+      // Older iPads can omit or reject AudioWorklet. The direct effects graph
+      // remains connected, so the instrument keeps playing without crush.
+    } finally {
+      URL.revokeObjectURL(url);
+      crushLoading = null;
+    }
+  })();
+};
+
 export const warmCurrentPatches = async (): Promise<boolean> => {
   if (!context || !mix) return false;
   bindProgress();
@@ -155,54 +188,63 @@ export const warmCurrentPatches = async (): Promise<boolean> => {
 };
 
 export const initAudio = async (): Promise<void> => {
-  if (context) {
-    await context.resume();
-    await warmCurrentPatches();
+  if (initializing) return initializing;
+  if (context && mix) {
+    void context.resume().catch(() => patchState({ ready: false }));
     return;
   }
-  context = new AudioContext();
-  mix = context.createGain();
-  filter = context.createBiquadFilter();
-  filter.type = "lowpass";
-  shaper = context.createWaveShaper();
-  delay = context.createDelay(1.2);
-  delayGain = context.createGain();
-  dry = context.createGain();
-  wet = context.createGain();
-  convolver = context.createConvolver();
-  convolver.buffer = makeImpulse(context);
-  master = context.createGain();
-  analyser = context.createAnalyser();
-  analyser.fftSize = 256;
+  initializing = (async () => {
+    context = new AudioContext({ latencyHint: "interactive" });
+    mix = context.createGain();
+    filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    shaper = context.createWaveShaper();
+    delay = context.createDelay(1.2);
+    delayGain = context.createGain();
+    dry = context.createGain();
+    wet = context.createGain();
+    convolver = context.createConvolver();
+    master = context.createGain();
+    analyser = context.createAnalyser();
+    analyser.fftSize = 256;
 
-  const blob = new Blob([crushWorklet], { type: "application/javascript" });
-  const url = URL.createObjectURL(blob);
+    mix.connect(filter);
+    filter.connect(shaper);
+    shaper.connect(dry);
+    shaper.connect(delay);
+    delay.connect(delayGain);
+    delayGain.connect(delay);
+    delayGain.connect(dry);
+    shaper.connect(convolver);
+    convolver.connect(wet);
+    dry.connect(master);
+    wet.connect(master);
+    master.connect(analyser);
+    analyser.connect(context.destination);
+    applyFx();
+    applyMaster();
+    // Trigger resume inside the touch event, but do not make visual/audio setup
+    // wait for Safari's resume promise. Scheduled voices begin as soon as the
+    // context transitions to running.
+    void context.resume().catch(() => patchState({ ready: false }));
+    // Do not hold the first note behind a network sample download. The light
+    // local fallback plays immediately and the sampled piano replaces it as
+    // soon as warming completes.
+    void warmCurrentPatches();
+    upgradeCrushInBackground();
+    const impulseContext = context;
+    const impulseNode = convolver;
+    window.setTimeout(() => {
+      if (context === impulseContext && convolver === impulseNode && !impulseNode.buffer) {
+        impulseNode.buffer = makeImpulse(impulseContext);
+      }
+    }, 0);
+  })();
   try {
-    await context.audioWorklet.addModule(url);
-    crush = new AudioWorkletNode(context, "crush-processor");
+    await initializing;
   } finally {
-    URL.revokeObjectURL(url);
+    initializing = null;
   }
-
-  mix.connect(filter);
-  filter.connect(shaper);
-  const post = crush ?? shaper;
-  if (crush) shaper.connect(crush);
-  post.connect(dry);
-  post.connect(delay);
-  delay.connect(delayGain);
-  delayGain.connect(delay);
-  delayGain.connect(dry);
-  post.connect(convolver);
-  convolver.connect(wet);
-  dry.connect(master);
-  wet.connect(master);
-  master.connect(analyser);
-  analyser.connect(context.destination);
-  applyFx();
-  applyMaster();
-  await context.resume();
-  await warmCurrentPatches();
 };
 
 const startBufferLayer = (layer: LayerState, midi: number, velocity: number, when: number): Voice => {
@@ -276,10 +318,7 @@ const collectLayerVoices = (
     voices.push(startSampledLayer(layer, spec, instrument, midi, velocity, when, duration));
   });
   if (voices.length) return voices;
-  if (state.sampleEngine === "fallback") {
-    return [startBufferLayer(layer, midi, velocity, when)];
-  }
-  return [];
+  return [startBufferLayer(layer, midi, velocity, when)];
 };
 
 export const noteOn = (midi: number, velocity = 100, when?: number, duration?: number): void => {
@@ -292,12 +331,6 @@ export const noteOn = (midi: number, velocity = 100, when?: number, duration?: n
     ...collectLayerVoices(state.layerB, midi, velocity, time, duration),
   ];
   if (!scheduled && voices.length) activeVoices.set(midi, voices);
-  if (!voices.length && !scheduled) {
-    void warmCurrentPatches().then(() => {
-      if (!state.heldNotes.includes(midi)) return;
-      noteOn(midi, velocity);
-    });
-  }
 };
 
 const releaseVoice = (midi: number, immediate = false, when?: number): void => {

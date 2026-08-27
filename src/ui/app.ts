@@ -35,7 +35,7 @@ import {
   state,
   subscribe,
 } from "../store";
-import type { Hand, LayerId, PhraseStyle } from "../types";
+import type { Hand, LayerId, PhraseNote, PhraseStyle } from "../types";
 import { KEY_COUNT, START_MIDI, isBlack, midiToComputerKey, qwertyToMidi } from "./keyboard";
 
 const messages: AgentMessage[] = [
@@ -67,15 +67,28 @@ const adsrPath = (): string => {
   return `M16 88 L${a} 18 L${d} ${s} L${r} ${s} L280 88`;
 };
 
+let renderedPhrase: PhraseNote[] | null = null;
+let renderedBars = -1;
+
 const renderRoll = (): void => {
   const roll = document.querySelector("#phrase-roll");
   if (!roll) return;
+  if (renderedPhrase === state.phrase && renderedBars === state.bars) return;
+  renderedPhrase = state.phrase;
+  renderedBars = state.bars;
   const beats = state.bars * 4;
-  roll.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+  const hitsByBeat = new Map<number, PhraseNote[]>();
+  state.phrase.forEach((note) => {
+    const beat = Math.floor(note.startBeat);
+    const hits = hitsByBeat.get(beat) ?? [];
+    hits.push(note);
+    hitsByBeat.set(beat, hits);
+  });
   for (let i = 0; i < beats; i += 1) {
     const cell = document.createElement("div");
     cell.className = `roll-beat${i % 4 === 0 ? " roll-bar" : ""}`;
-    const hits = state.phrase.filter((note) => Math.floor(note.startBeat) === i);
+    const hits = hitsByBeat.get(i) ?? [];
     hits.slice(0, 4).forEach((note) => {
       const mark = document.createElement("span");
       mark.className = "roll-hit";
@@ -83,8 +96,9 @@ const renderRoll = (): void => {
       mark.style.bottom = `${((note.midi - 48) / 36) * 80 + 8}%`;
       cell.appendChild(mark);
     });
-    roll.appendChild(cell);
+    fragment.appendChild(cell);
   }
+  roll.replaceChildren(fragment);
 };
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -195,7 +209,7 @@ const renderHands = (): void => {
 const updateView = (): void => {
   const set = (id: string, text: string) => {
     const el = document.querySelector(id);
-    if (el) el.textContent = text;
+    if (el && el.textContent !== text) el.textContent = text;
   };
   const together = state.humanHeld.length > 0 && state.agentHeld.length > 0;
   const teaching = Boolean(state.lesson) && state.lesson?.lastGrade !== "done";
@@ -277,17 +291,39 @@ const updateView = (): void => {
 
 const ensureAudio = async (): Promise<void> => {
   await initAudio();
-  patchState({ ready: true });
-  applyFx();
-  applyMaster();
+  if (!state.ready) {
+    patchState({ ready: true });
+    applyFx();
+    applyMaster();
+  }
 };
 
+let playRequest = 0;
+const pendingHumanNotes = new Map<number, number>();
+
 const handlePlayMidi = (midi: number, velocity = 108): void => {
-  void ensureAudio().then(() => playHuman(midi, velocity));
+  const request = ++playRequest;
+  pendingHumanNotes.set(midi, request);
+  const ready = ensureAudio();
+  // initAudio builds the playable graph synchronously before its resume promise
+  // settles. Starting the voice now gives touch feedback in this same event,
+  // which matters on iPad; the context resumes under the same user gesture.
+  if (getContext()) {
+    pendingHumanNotes.delete(midi);
+    playHuman(midi, velocity);
+    void ready.catch(() => handleReleaseMidi(midi));
+    return;
+  }
+  void ready.then(() => {
+    if (pendingHumanNotes.get(midi) !== request) return;
+    pendingHumanNotes.delete(midi);
+    playHuman(midi, velocity);
+  }).catch(() => pendingHumanNotes.delete(midi));
 };
 
 const handleReleaseMidi = (midi: number): void => {
-  releaseHuman(midi);
+  pendingHumanNotes.delete(midi);
+  if (state.humanHeld.includes(midi)) releaseHuman(midi);
 };
 
 const handleGenerate = (): void => {
@@ -344,7 +380,14 @@ export const mountApp = (): void => {
   renderKeys();
   renderMessages();
   updateView();
-  subscribe(updateView);
+  let viewFrame: number | null = null;
+  subscribe(() => {
+    if (viewFrame !== null) return;
+    viewFrame = requestAnimationFrame(() => {
+      viewFrame = null;
+      updateView();
+    });
+  });
 
   document.querySelector("#arm")?.addEventListener("click", () => {
     void ensureAudio().then(() => connectMidi());
@@ -427,21 +470,64 @@ export const mountApp = (): void => {
     });
   });
 
-  const piano = document.querySelector("#piano");
+  const piano = document.querySelector<HTMLElement>("#piano");
+  const activePointers = new Map<number, number>();
+  const pointerStillHolds = (midi: number): boolean => [...activePointers.values()].includes(midi);
+  const keyAtPoint = (pointer: PointerEvent): HTMLElement | null => {
+    const hit = document.elementFromPoint(pointer.clientX, pointer.clientY);
+    const key = hit?.closest<HTMLElement>(".key") ?? null;
+    return key && piano?.contains(key) ? key : null;
+  };
+  const pointerVelocity = (pointer: PointerEvent, key: HTMLElement): number => {
+    const rect = key.getBoundingClientRect();
+    const position = Math.max(0, Math.min(1, (pointer.clientY - rect.top) / rect.height));
+    return Math.round((1 - position) * 50 + 70);
+  };
+  const releasePointer = (pointer: PointerEvent): void => {
+    const midi = activePointers.get(pointer.pointerId);
+    if (midi === undefined) return;
+    activePointers.delete(pointer.pointerId);
+    if (!pointerStillHolds(midi)) handleReleaseMidi(midi);
+  };
+
   piano?.addEventListener("pointerdown", (event) => {
     const pointer = event as PointerEvent;
     const target = (pointer.target as HTMLElement).closest<HTMLElement>(".key");
     if (!target) return;
+    pointer.preventDefault();
     const midi = Number(target.dataset.midi);
-    const rect = target.getBoundingClientRect();
-    const velocity = Math.round((1 - (pointer.clientY - rect.top) / rect.height) * 50 + 70);
-    handlePlayMidi(midi, velocity);
-    const handleUp = () => {
-      handleReleaseMidi(midi);
-      window.removeEventListener("pointerup", handleUp);
-    };
-    window.addEventListener("pointerup", handleUp);
+    const alreadyHeld = pointerStillHolds(midi);
+    activePointers.set(pointer.pointerId, midi);
+    try {
+      piano.setPointerCapture(pointer.pointerId);
+    } catch {
+      // Some older Safari builds can reject capture during a synthetic or
+      // interrupted touch. Window-level cancel handling still releases it.
+    }
+    if (!alreadyHeld) handlePlayMidi(midi, pointerVelocity(pointer, target));
   });
+  piano?.addEventListener("pointermove", (event) => {
+    const pointer = event as PointerEvent;
+    const previous = activePointers.get(pointer.pointerId);
+    if (previous === undefined) return;
+    pointer.preventDefault();
+    const target = keyAtPoint(pointer);
+    if (!target) return;
+    const midi = Number(target.dataset.midi);
+    if (midi === previous) return;
+    activePointers.set(pointer.pointerId, midi);
+    if (!pointerStillHolds(previous)) handleReleaseMidi(previous);
+    const heldByAnotherPointer = [...activePointers.entries()].some(
+      ([pointerId, held]) => pointerId !== pointer.pointerId && held === midi,
+    );
+    if (!heldByAnotherPointer) handlePlayMidi(midi, pointerVelocity(pointer, target));
+  });
+  piano?.addEventListener("pointerup", (event) => releasePointer(event as PointerEvent));
+  piano?.addEventListener("pointercancel", (event) => releasePointer(event as PointerEvent));
+  piano?.addEventListener("lostpointercapture", (event) => releasePointer(event as PointerEvent));
+  piano?.addEventListener("contextmenu", (event) => event.preventDefault());
+  window.addEventListener("pointerup", (event) => releasePointer(event));
+  window.addEventListener("pointercancel", (event) => releasePointer(event));
 
   window.addEventListener("keydown", (event) => {
     if (event.repeat || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
@@ -462,30 +548,32 @@ export const mountApp = (): void => {
     meter.width = METER_W * dpr;
     meter.height = METER_H * dpr;
   }
+  const meterContext = meter?.getContext("2d") ?? null;
+  if (meterContext) meterContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const meterData = new Uint8Array(128);
   let peakL = 0;
   let peakR = 0;
-  const draw = () => {
-    const analyser = getAnalyser();
-    if (meter && analyser) {
-      const ctx2 = meter.getContext("2d");
-      if (ctx2) {
-        // setTransform must follow the width/height assignment above, which
-        // resets the context state.
-        ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const data = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(data);
-        ctx2.clearRect(0, 0, METER_W, METER_H);
-        const half = data.length / 2;
-        // /192 reproduces the previous avg/3-of-64px scaling as a 0..1 level.
-        const left = Math.min(1, data.slice(0, half).reduce((a, b) => a + b, 0) / half / 192);
-        const right = Math.min(1, data.slice(half).reduce((a, b) => a + b, 0) / half / 192);
-        peakL = Math.max(peakL - 0.012, left);
-        peakR = Math.max(peakR - 0.012, right);
-        drawMeterColumn(ctx2, 2, 9, left, peakL);
-        drawMeterColumn(ctx2, 15, 9, right, peakR);
-      }
-    }
+  let lastMeterFrame = 0;
+  const draw = (now: number) => {
     requestAnimationFrame(draw);
+    if (document.hidden || now - lastMeterFrame < 32) return;
+    lastMeterFrame = now;
+    const analyser = getAnalyser();
+    if (!meterContext || !analyser) return;
+    analyser.getByteFrequencyData(meterData);
+    meterContext.clearRect(0, 0, METER_W, METER_H);
+    const half = meterData.length / 2;
+    let leftSum = 0;
+    let rightSum = 0;
+    for (let i = 0; i < half; i += 1) leftSum += meterData[i];
+    for (let i = half; i < meterData.length; i += 1) rightSum += meterData[i];
+    // /192 reproduces the previous avg/3-of-64px scaling as a 0..1 level.
+    const left = Math.min(1, leftSum / half / 192);
+    const right = Math.min(1, rightSum / half / 192);
+    peakL = Math.max(peakL - 0.024, left);
+    peakR = Math.max(peakR - 0.024, right);
+    drawMeterColumn(meterContext, 2, 9, left, peakL);
+    drawMeterColumn(meterContext, 15, 9, right, peakR);
   };
-  draw();
+  requestAnimationFrame(draw);
 };

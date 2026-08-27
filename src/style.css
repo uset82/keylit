@@ -442,6 +442,11 @@ select.mini {
   isolation: isolate;
   perspective: 1200px;
   perspective-origin: 50% 0%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: contain;
 }
 
 /* shadow the panel casts down onto the keys — must be an overlay;
@@ -1032,6 +1037,12 @@ select.mini {
 }
 
 /* ---------- responsive ---------- */
+
+@media (pointer: coarse) {
+  :root { --t-key: 32ms; }
+  .key { animation: none; }
+  .key.on-next { animation: none; }
+}
 
 @media (max-width: 900px) {
   .fx-row { grid-template-columns: repeat(3, 1fr); row-gap: 16px; }
