@@ -60,36 +60,29 @@ check("fenced json -> 200", fenced.status, 200);
 check("fenced json -> parsed", fenced.json.patch?.presetName, "THUNDER");
 
 check(
-  "prose only -> 502",
+  "prose only -> local fallback",
   (await designReply({ ...base, apiKey: "k", ip: "4.4.4.4", fetchImpl: upstream("I cannot do that") })).status,
-  502,
+  200,
 );
-check(
-  "upstream error -> 502",
-  (
-    await designReply({
-      ...base,
-      apiKey: "k",
-      ip: "5.5.5.5",
-      fetchImpl: async () => ({ ok: false, json: async () => ({}) }),
-    })
-  ).status,
-  502,
-);
-check(
-  "upstream throws -> 502",
-  (
-    await designReply({
-      ...base,
-      apiKey: "k",
-      ip: "6.6.6.6",
-      fetchImpl: async () => {
-        throw new Error("network down");
-      },
-    })
-  ).status,
-  502,
-);
+const upstreamFailure = await designReply({
+  ...base,
+  apiKey: "k",
+  ip: "5.5.5.5",
+  fetchImpl: async () => ({ ok: false, json: async () => ({}) }),
+});
+check("upstream error -> local fallback", upstreamFailure.status, 200);
+check("upstream error -> carries a patch", typeof upstreamFailure.json.patch?.presetName, "string");
+check("upstream error -> marks fallback", upstreamFailure.json.model, "local-fallback");
+
+const networkFailure = await designReply({
+  ...base,
+  apiKey: "k",
+  ip: "6.6.6.6",
+  fetchImpl: async () => {
+    throw new Error("network down");
+  },
+});
+check("upstream throws -> local fallback", networkFailure.status, 200);
 
 // 12 allowed in the window, so the 13th from one IP is the first to be refused.
 let last = 0;
