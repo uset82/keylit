@@ -1,4 +1,5 @@
-import { generatePhrase } from "../engine/generate";
+import { generatePhrase, styleBpm } from "../engine/generate";
+import { drumLoop, drumPatternIds, isDrumPattern } from "../engine/drums";
 import {
   applyFx,
   applyMaster,
@@ -25,13 +26,14 @@ import {
   resolveLessonId,
   startDrill,
   startLesson,
+  startPhraseLesson,
   stopLesson,
   teacherLine,
 } from "../engine/lessons";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
 import { applySoundPatch, clampPatch, sampleSheet } from "../engine/patch";
 import { playAgentNotes } from "../engine/perform";
-import { retimeTransport } from "../engine/transport";
+import { retimeTransport , setDrumLoop } from "../engine/transport";
 import {
   FACTORY_SAMPLES,
   cycleSample,
@@ -177,6 +179,21 @@ export const instrumentTools = (): ToolDefinition[] => [
         if (!list.length) return textResult("Give me MIDI notes to light. Example: [60, 64, 67].");
         const drill = startDrill(list, String(title || "Next keys"), String(coach || "Play the glowing keys in order."));
         return textResult(`I lit ${nameList(nextMidi())}. ${drill.coach} Wait for them to play.`);
+      }),
+  },
+  {
+    name: "teach-phrase",
+    description:
+      "Turn the phrase you last generated into a lesson: light its top line, first two bars, one key at a time. Call this after generate-phrase when the student asks to learn what you made. Stops any backing beat.",
+    inputSchema: { type: "object", properties: { title: { type: "string" } } },
+    execute: ({ title }) =>
+      withAgent("teach-phrase", () => {
+        if (!state.phrase.length) return textResult("There is no phrase yet. Call generate-phrase first.");
+        const lesson = startPhraseLesson(state.phrase, String(title || `${state.style.toUpperCase()} riff`));
+        if (!lesson) return textResult("That phrase has nothing in the first two bars to teach.");
+        return textResult(
+          `Teaching ${lesson.steps.length} notes of the ${state.style} riff. First: ${nameList(nextMidi())}. I lit the key — wait for them to play it.`,
+        );
       }),
   },
   {
@@ -462,6 +479,27 @@ export const instrumentTools = (): ToolDefinition[] => [
       }),
   },
   {
+    name: "set-drums",
+    description:
+      "Start or stop a looping backing beat under the keys. Patterns: backbeat, house, techno, garage. Pass an empty pattern to stop. The keys stay a piano; this is accompaniment, not a drum map.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        pattern: { type: "string", description: "backbeat, house, techno, garage, or empty to stop" },
+      },
+    },
+    execute: ({ pattern }) =>
+      withAgent("set-drums", () => {
+        const id = String(pattern ?? "");
+        if (id && !isDrumPattern(id)) {
+          return textResult(`I do not have a ${id} beat. I can play: ${drumPatternIds().join(", ")}.`);
+        }
+        patchState({ drums: id });
+        setDrumLoop(id && isDrumPattern(id) ? drumLoop(id) : null);
+        return textResult(id ? `${id} beat looping under the keys.` : "Drums off.");
+      }),
+  },
+  {
     name: "generate-phrase",
     description: "Generate a musical stab phrase in a style and play it on the shared instrument.",
     inputSchema: {
@@ -477,10 +515,14 @@ export const instrumentTools = (): ToolDefinition[] => [
         const nextStyle = (style as PhraseStyle) || state.style;
         const nextBars = (bars as 4 | 8) || state.bars;
         const phrase = generatePhrase(nextStyle, nextBars);
-        patchState({ style: nextStyle, bars: nextBars, presetName: `${nextStyle.toUpperCase()} GEN` });
+        // Each style is written at its own tempo, and playPhrase reads state.bpm
+        // to schedule — so a techno loop left at 96 BPM is not a techno loop.
+        const nextBpm = styleBpm(nextStyle);
+        patchState({ style: nextStyle, bars: nextBars, bpm: nextBpm, presetName: `${nextStyle.toUpperCase()} GEN` });
+        retimeTransport();
         setPhrase(phrase);
         playPhrase(phrase);
-        return textResult(`Generated ${phrase.length} notes in ${nextStyle}`);
+        return textResult(`Generated ${phrase.length} notes in ${nextStyle} at ${nextBpm} BPM`);
       }),
   },
   {

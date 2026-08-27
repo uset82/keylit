@@ -1,5 +1,7 @@
 import { playPhrase } from "../engine/audio";
-import { generatePhrase } from "../engine/generate";
+import { generatePhrase, styleBpm } from "../engine/generate";
+import { drumLoop, isDrumPattern } from "../engine/drums";
+import { setDrumLoop } from "../engine/transport";
 import { applySoundPatch, type SoundPatch } from "../engine/patch";
 import { patchState, setPhrase, state } from "../store";
 import type { PhraseStyle } from "../types";
@@ -155,6 +157,13 @@ const RECIPES: Recipe[] = [
     say: "Für Elise. Your first black keys — D sharp sits just left of E.",
   },
   {
+    // Above the catch-all below, which owns the bare word "teach" and would
+    // otherwise answer "teach me this riff" with the find-a-C lesson.
+    match: /(teach|learn|play).{0,12}(this|that|it|the (riff|loop|phrase|beat|groove))|teach me (this|that|it)/,
+    steps: [{ tool: "teach-phrase" }],
+    say: "Here is the top line of that riff, one key at a time.",
+  },
+  {
     match: /teach|learn|lesson|beginner|how (do i|to) play/,
     steps: [{ tool: "start-lesson", input: { lesson: "landmarks" } }],
     say: "Start here. Nobody can play a note they cannot find — so first I teach you to find C.",
@@ -163,6 +172,36 @@ const RECIPES: Recipe[] = [
     match: /hear|listen|what.?s on|status|duet|lesson state/,
     steps: [{ tool: "get-lesson-state" }, { tool: "get-duet-state" }],
     say: "I am listening on this page — not a separate chat.",
+  },
+  {
+    match: /(drums?|beat|groove) (off|stop)|stop (the )?(drums?|beat)|no drums?/,
+    steps: [{ tool: "set-drums", input: { pattern: "" } }],
+    say: "Drums off.",
+  },
+  {
+    match: /(house).{0,14}(beat|drums?|groove)|(beat|drums?|groove).{0,14}(house)/,
+    steps: [{ tool: "set-drums", input: { pattern: "house" } }],
+    say: "Four on the floor, open hat on the off-beat.",
+  },
+  {
+    match: /(techno).{0,14}(beat|drums?|groove)|(beat|drums?|groove).{0,14}(techno)/,
+    steps: [{ tool: "set-drums", input: { pattern: "techno" } }],
+    say: "Techno: same kick, tighter top, no clap.",
+  },
+  {
+    match: /(garage|two[- ]step).{0,14}(beat|drums?|groove)|(beat|drums?|groove).{0,14}(garage|two[- ]step)/,
+    steps: [{ tool: "set-drums", input: { pattern: "garage" } }],
+    say: "Garage two-step, shuffled kick and skipping hat.",
+  },
+  {
+    match: /(backbeat|rock|basic|simple|plain).{0,14}(beat|drums?|groove)|(beat|drums?|groove).{0,14}(backbeat|rock|basic|simple|plain)/,
+    steps: [{ tool: "set-drums", input: { pattern: "backbeat" } }],
+    say: "Backbeat: kick on 1 and 3, snare on 2 and 4.",
+  },
+  {
+    match: /(drums?|a beat|some beat|give me a beat)/,
+    steps: [{ tool: "set-drums", input: { pattern: "backbeat" } }],
+    say: "A backbeat. Ask for house, techno or garage to change it.",
   },
   {
     match: /harmon|color|seventh|add notes/,
@@ -194,23 +233,42 @@ const RECIPES: Recipe[] = [
     steps: [
       { tool: "set-layer", input: { layer: "A", sampleId: "sy-rail", volume: 0.86, transpose: 0 } },
       { tool: "set-layer", input: { layer: "B", sampleId: "or-reed", volume: 0.28, transpose: 12 } },
-      { tool: "set-fx", input: { filter: 0.62, distortion: 0.28, crush: 0.22, delay: 0.18, reverb: 0.2 } },
+      // A stab has to stop before the next one lands. The factory release runs
+      // 550ms, which at these tempos smears four hits a bar into one chord.
+      { tool: "set-adsr", input: { attack: 0.001, decay: 0.2, sustain: 0.24, release: 0.16 } },
+      { tool: "set-fx", input: { filter: 0.68, distortion: 0.14, crush: 0.14, delay: 0.18, reverb: 0.18 } },
       { tool: "generate-phrase", input: { style: "rave", bars: 4 } },
     ],
-    say: "Yamaha CP80 + drawbar, crushed rave stab.",
+    say: "C-minor rave stab on the CP80, i-VII-VI.",
   },
   {
     match: /house/,
-    steps: [{ tool: "generate-phrase", input: { style: "house", bars: 4 } }],
-    say: "House stabs are on the roll.",
+    steps: [
+      { tool: "set-layer", input: { layer: "A", sampleId: "sy-rail", volume: 0.84, transpose: 0 } },
+      { tool: "set-layer", input: { layer: "B", volume: 0 } },
+      { tool: "set-adsr", input: { attack: 0.002, decay: 0.24, sustain: 0.3, release: 0.2 } },
+      { tool: "set-fx", input: { filter: 0.8, distortion: 0.06, crush: 0.08, delay: 0.14, reverb: 0.18 } },
+      { tool: "generate-phrase", input: { style: "house", bars: 4 } },
+      // Last, so the kit inherits the tempo generate-phrase just set and starts
+      // against a context the steps above have already armed.
+      { tool: "set-drums", input: { pattern: "house" } },
+    ],
+    say: "F-major house comp, I-vi-IV-V, over four on the floor.",
   },
   {
+    // Was the harshest preset in the app: crush 0.34 with distortion 0.2, which
+    // makeCurve turns into a k=8 clip, over a phrase whose bars overlapped each
+    // other. The pile-up is gone, and these are the levels the stab needs.
     match: /techno/,
     steps: [
-      { tool: "set-fx", input: { crush: 0.34, filter: 0.48, delay: 0.12, reverb: 0.1, distortion: 0.2 } },
-      { tool: "generate-phrase", input: { style: "techno", bars: 8 } },
+      { tool: "set-layer", input: { layer: "A", sampleId: "sy-rail", volume: 0.82, transpose: 0 } },
+      { tool: "set-layer", input: { layer: "B", volume: 0 } },
+      { tool: "set-adsr", input: { attack: 0.001, decay: 0.14, sustain: 0.18, release: 0.12 } },
+      { tool: "set-fx", input: { filter: 0.7, distortion: 0.08, crush: 0.12, delay: 0.12, reverb: 0.1 } },
+      { tool: "generate-phrase", input: { style: "techno", bars: 4 } },
+      { tool: "set-drums", input: { pattern: "techno" } },
     ],
-    say: "Tighter techno hits, more crush.",
+    say: "A-minor techno: offbeat stabs over the kick.",
   },
   {
     match: /steinway|ballad|roland/,
@@ -380,10 +438,11 @@ const applyGeneratedPhrase = (notes: typeof state.phrase, bars: 4 | 8, bpm?: num
 /**
  * Short, dry and bright, for when the ask was rhythmic.
  *
- * There is no drum kit in a rompler of nine pitched samples, so a beat here is
- * stabs. On the factory Steinway, whose release runs half a second, four stabs
- * to the bar overlap into one sustained chord — the notes are right and the
- * rhythm is inaudible. Each hit has to stop before the next one lands.
+ * The melodic half of a rhythmic ask. There IS a drum kit now — synthesised in
+ * engine/drums — so this patch is the chord stabs that sit on top of it, not a
+ * substitute for it. On the factory Steinway, whose release runs half a second,
+ * four stabs to the bar overlap into one sustained chord, so each hit has to
+ * stop before the next one lands.
  */
 const BEAT_PATCH: SoundPatch = {
   presetName: "BEAT STABS",
@@ -400,14 +459,27 @@ const fallbackMidi = async (prompt: string): Promise<string> => {
   if (rhythmic) await applySoundPatch(BEAT_PATCH);
   const phrase = generatePhrase(style, bars);
   // BEAT_PATCH already named the preset; leave it rather than overwrite it.
-  patchState({ style, bars, ...(rhythmic ? {} : { presetName: `${style.toUpperCase()} CUSTOM` }) });
+  patchState({
+    style,
+    bars,
+    bpm: styleBpm(style),
+    ...(rhythmic ? {} : { presetName: `${style.toUpperCase()} CUSTOM` }),
+  });
+  if (rhythmic) {
+    // A real kit under the stabs. The style names already line up with the
+    // pattern ids, and backbeat covers anything that has no groove of its own.
+    // Started after the tempo lands, or the kit loops at the previous BPM.
+    const pattern = isDrumPattern(style) ? style : "backbeat";
+    patchState({ drums: pattern });
+    setDrumLoop(drumLoop(pattern));
+  }
   setPhrase(phrase);
   playPhrase(phrase);
   // Say plainly that these are not drums. A child who was promised a beat and
   // hears a piano will decide the app is broken; one who is told it is a piano
   // playing a groove hears exactly what was described.
   return rhythmic
-    ? `No drum kit on a piano — so here is a ${bars}-bar ${style} groove, played as short stabs. Ask again for a new one, or Export MIDI to keep it.`
+    ? `A ${style} beat is looping, with a ${bars}-bar stab riff over it. Play along, ask again for a new riff, or Export MIDI to keep it. Say "drums off" to stop the beat.`
     : `I put a ${bars}-bar ${style} MIDI phrase on the roll. Play it, then use Export MIDI to keep it.`;
 };
 

@@ -69,6 +69,7 @@ export const state: InstrumentState = {
   loadProgress: null,
   sustain: false,
   noteNames: true,
+  drums: "",
   audioBlocked: false,
 };
 

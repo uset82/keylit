@@ -12,7 +12,7 @@ import type {
   TimingGrade,
 } from "../types";
 import { midiName, nameList } from "./notes";
-import { beatSeconds, startTransport, stopTransport } from "./transport";
+import { beatSeconds, setDrumLoop, startTransport, stopTransport } from "./transport";
 import { midiToComputerKey } from "../ui/keyboard";
 
 type LessonDef = {
@@ -989,6 +989,45 @@ export const startDrill = (notes: number[], title = "Your next keys", coach = "P
   const lesson = makeRuntime("drill", title, coach, steps.length ? steps : [note(60, "I need notes to teach. Defaulting to middle C.")]);
   patchState({ lesson, duetMode: "idle" });
   stopTransport();
+  return lesson;
+};
+
+/** Two bars. The rest of a generated loop is the same figure again. */
+const TEACHABLE_BEATS = 8;
+
+/**
+ * Turn the phrase the agent just generated into a lesson the student can play.
+ *
+ * Only the top line, and only the first two bars. A generated loop is chord
+ * stabs on a grid: three voices at 130 BPM is not something a beginner can
+ * play, and four bars of it is not something they will finish. The highest note
+ * of each stab is the line a listener hums back, so that is the line worth
+ * teaching.
+ *
+ * Untimed on purpose, and the beat stops. Learning where a key is and keeping up
+ * with a kick are two different skills, and this is the first one.
+ *
+ * Keyed by start beat rather than by pitch — unlike `startDrill`, whose `Set`
+ * would collapse a riff, and a riff is mostly repeats.
+ */
+export const startPhraseLesson = (phrase: PhraseNote[], title = "Your riff"): LessonState | null => {
+  const topByBeat = new Map<number, number>();
+  phrase
+    .filter((item) => item.startBeat < TEACHABLE_BEATS && item.midi >= 0 && item.midi <= 127)
+    .forEach((item) => {
+      const top = topByBeat.get(item.startBeat);
+      if (top === undefined || item.midi > top) topByBeat.set(item.startBeat, item.midi);
+    });
+  const line = [...topByBeat.entries()].sort((a, b) => a[0] - b[0]).map(([, midi]) => midi);
+  if (!line.length) return null;
+
+  const coach = "Play the top line of the riff I just made. One key at a time — no rush.";
+  const steps = line.map((midi, index) =>
+    note(midi, `${coach.split(".")[0]}. Note ${index + 1} of ${line.length}: ${keyHint(midi)}.`),
+  );
+  const lesson = makeRuntime("drill", title, coach, steps);
+  patchState({ lesson, duetMode: "idle", drums: "" });
+  setDrumLoop(null);
   return lesson;
 };
 

@@ -27,13 +27,14 @@ import {
   timingAccuracy,
 } from "../engine/lessons";
 import { playHuman, releaseHuman } from "../engine/perform";
-import { retimeTransport } from "../engine/transport";
+import { retimeTransport, setDrumLoop } from "../engine/transport";
+import { drumLoop, isDrumPattern } from "../engine/drums";
 import { generatePhrase } from "../engine/generate";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
 import { connectMidi } from "../engine/midi-input";
 import { normalizeAndTrim, storeUserSample } from "../engine/samples";
 import {
-  cycleSample,
+  FACTORY_SAMPLES,
   factoryLabel,
   factorySource,
   patchLayer,
@@ -137,6 +138,67 @@ const dressKey = (key: HTMLButtonElement, midi: number, rangeStart: number): voi
     name.textContent = midi % 12 === 0 ? noteLabel(midi) : NOTE_NAMES[midi % 12];
     key.appendChild(name);
   }
+};
+
+/** Family headings for the instrument pickers, in the order they appear. */
+const KIND_LABELS: Record<string, string> = {
+  piano: "Pianos",
+  synth: "Electric keys",
+  organ: "Organs",
+  orchestra: "Strings",
+  bass: "Bass",
+  drums: "Drum kits",
+  multi: "Layered",
+};
+
+/**
+ * Fill a layer picker from FACTORY_SAMPLES, grouped by family.
+ *
+ * Built from the data rather than written into index.html so the list cannot
+ * drift from what the rompler can actually load — the old -/+ buttons cycled an
+ * invisible list, which is why nobody could tell what instruments existed.
+ */
+const fillPicker = (select: HTMLSelectElement): void => {
+  if (select.childElementCount) return;
+  const byKind = new Map<string, typeof FACTORY_SAMPLES>();
+  FACTORY_SAMPLES.forEach((sample) => {
+    const group = byKind.get(sample.kind) ?? [];
+    group.push(sample);
+    byKind.set(sample.kind, group);
+  });
+  const fragment = document.createDocumentFragment();
+  Object.keys(KIND_LABELS).forEach((kind) => {
+    const samples = byKind.get(kind);
+    if (!samples?.length) return;
+    const group = document.createElement("optgroup");
+    group.label = KIND_LABELS[kind];
+    samples.forEach((sample) => {
+      const option = document.createElement("option");
+      option.value = sample.id;
+      option.textContent = sample.name;
+      group.appendChild(option);
+    });
+    fragment.appendChild(group);
+  });
+  select.appendChild(fragment);
+};
+
+const layerPicker = (layer: LayerId): HTMLSelectElement | null =>
+  document.querySelector<HTMLSelectElement>(layer === "A" ? "#layer-a-pick" : "#layer-b-pick");
+
+/** Keep each picker showing the layer it controls, unless the user is in it. */
+const syncPickers = (): void => {
+  ([["A", state.layerA], ["B", state.layerB]] as const).forEach(([layer, value]) => {
+    const select = layerPicker(layer);
+    if (!select) return;
+    fillPicker(select);
+    // A user-imported sample has no option, so leave the box alone rather than
+    // silently snapping it back to a factory instrument.
+    const known = [...select.options].some((option) => option.value === value.sampleId);
+    if (known && document.activeElement !== select && select.value !== value.sampleId) {
+      select.value = value.sampleId;
+    }
+  });
 };
 
 const LAST_MIDI = START_MIDI + KEY_COUNT - 1;
@@ -484,6 +546,12 @@ const updateView = (): void => {
   document.querySelector("#quit-lesson")?.classList.toggle("hidden", !state.lesson);
   document.querySelector("#piano")?.classList.toggle("show-names", state.noteNames);
   document.querySelector("#note-names")?.classList.toggle("live", state.noteNames);
+  syncPickers();
+  const drumPick = document.querySelector<HTMLSelectElement>("#drum-pick");
+  // The agent can change the beat too, so the select follows state.
+  if (drumPick && document.activeElement !== drumPick && drumPick.value !== state.drums) {
+    drumPick.value = state.drums;
+  }
   document.querySelector("#audio-blocked")?.classList.toggle("hidden", !state.audioBlocked);
   document.querySelectorAll<HTMLInputElement>("[data-knob]").forEach((input) => {
     const key = input.dataset.knob;
@@ -692,14 +760,17 @@ export const mountApp = (): void => {
   document.querySelector("#lcd")?.addEventListener("click", () => {
     patchState({ lcdPage: state.lcdPage === "browse" ? "envelope" : "browse" });
   });
-  const handleCycle = (layer: LayerId, direction: 1 | -1): void => {
-    cycleSample(layer, direction);
-    void ensureAudio().then(() => warmCurrentPatches());
-  };
-  document.querySelector("#prev-preset")?.addEventListener("click", () => handleCycle("A", -1));
-  document.querySelector("#next-preset")?.addEventListener("click", () => handleCycle("A", 1));
-  document.querySelector("#prev-b")?.addEventListener("click", () => handleCycle("B", -1));
-  document.querySelector("#next-b")?.addEventListener("click", () => handleCycle("B", 1));
+  // Same two calls handleCycle makes, so the picker and the agent's set-layer
+  // tool take identical paths into the rompler.
+  ([["A", "#layer-a-pick"], ["B", "#layer-b-pick"]] as const).forEach(([layer, selector]) => {
+    document.querySelector<HTMLSelectElement>(selector)?.addEventListener("change", (event) => {
+      const sampleId = (event.target as HTMLSelectElement).value;
+      const sample = FACTORY_SAMPLES.find((entry) => entry.id === sampleId);
+      if (!sample) return;
+      patchLayer(layer, { sampleId: sample.id, kind: sample.kind });
+      void ensureAudio().then(() => warmCurrentPatches());
+    });
+  });
   document.querySelector("#lock-a")?.addEventListener("click", () => patchLayer("A", { locked: !state.layerA.locked }));
   document.querySelector("#lock-b")?.addEventListener("click", () => patchLayer("B", { locked: !state.layerB.locked }));
   const setBpm = (next: number): void => {
@@ -731,6 +802,15 @@ export const mountApp = (): void => {
   // suspended iOS context needs to resume.
   document.querySelector("#audio-blocked")?.addEventListener("click", () => {
     void ensureAudio();
+  });
+  document.querySelector<HTMLSelectElement>("#drum-pick")?.addEventListener("change", (event) => {
+    const value = (event.target as HTMLSelectElement).value;
+    // Arming audio first: the beat is scheduled on the audio clock, so without a
+    // running context the first bar is silently dropped.
+    patchState({ drums: isDrumPattern(value) ? value : "" });
+    void ensureAudio().then(() => {
+      setDrumLoop(isDrumPattern(value) ? drumLoop(value) : null);
+    });
   });
   document.querySelector("#note-names")?.addEventListener("click", () => {
     patchState({ noteNames: !state.noteNames });

@@ -153,36 +153,48 @@
 
         <div class="intro-pick dj-only">
           <div class="bento">
-            <div class="bento-tile is-hero fam-dj" data-viz="wave">
-              <span class="tile-meta"><i class="tile-tier">DECKS</i></span>
+            <button class="bento-tile is-hero fam-dj" data-recipe="make a track" type="button" style="--i:0" data-viz="wave">
+              <span class="tile-meta"><i class="tile-num">01</i><i class="tile-tier">DECKS</i></span>
               <em>Make a track</em>
               <span class="tile-say">Five styles — piano, rave, house, techno, garage. Generate 4 or 8 bars and play over the loop.</span>
-            </div>
-            <div class="bento-tile fam-dj" data-viz="hand">
-              <span class="tile-meta"><i class="tile-tier">RACK</i></span>
+              <div class="tile-chips-row" role="group" aria-label="Pick a style">
+                <span class="tile-chip" data-recipe="piano track">piano</span>
+                <span class="tile-chip" data-recipe="rave track">rave</span>
+                <span class="tile-chip" data-recipe="house track">house</span>
+                <span class="tile-chip" data-recipe="techno track">techno</span>
+                <span class="tile-chip" data-recipe="garage track">garage</span>
+              </div>
+            </button>
+
+            <button class="bento-tile fam-dj" data-recipe="explain fx" type="button" style="--i:1" data-viz="hand">
+              <span class="tile-meta"><i class="tile-num">02</i><i class="tile-tier">RACK</i></span>
               <em>FX knobs</em>
               <span class="tile-say">Filter, distortion, crush, delay, reverb — live on the whole rack.</span>
-            </div>
-            <div class="bento-tile fam-dj" data-viz="stack">
-              <span class="tile-meta"><i class="tile-tier">RACK</i></span>
+            </button>
+
+            <button class="bento-tile fam-dj" data-recipe="two layers" type="button" style="--i:2" data-viz="stack">
+              <span class="tile-meta"><i class="tile-num">03</i><i class="tile-tier">RACK</i></span>
               <em>Two layers</em>
               <span class="tile-say">Stack a grand under strings, transpose either, lock one and browse the other.</span>
-            </div>
-            <div class="bento-tile fam-dj" data-viz="run">
-              <span class="tile-meta"><i class="tile-tier">CLOCK</i></span>
+            </button>
+
+            <button class="bento-tile fam-dj" data-recipe="tempo guide" type="button" style="--i:3" data-viz="run">
+              <span class="tile-meta"><i class="tile-num">04</i><i class="tile-tier">CLOCK</i></span>
               <em>Tempo</em>
               <span class="tile-say">50 to 180 BPM, or just tell me "faster".</span>
-            </div>
-            <div class="bento-tile fam-dj" data-viz="mirror">
-              <span class="tile-meta"><i class="tile-tier">OUT</i></span>
+            </button>
+
+            <button class="bento-tile fam-dj" data-recipe="export midi" type="button" style="--i:4" data-viz="mirror">
+              <span class="tile-meta"><i class="tile-num">05</i><i class="tile-tier">OUT</i></span>
               <em>Export MIDI</em>
               <span class="tile-say">Take the loop out to any DAW.</span>
-            </div>
-            <div class="bento-tile is-wide fam-dj" data-viz="duet">
-              <span class="tile-meta"><i class="tile-tier">NOTE</i></span>
+            </button>
+
+            <button class="bento-tile is-wide fam-dj" data-recipe="switch to lessons" type="button" style="--i:5" data-viz="duet">
+              <span class="tile-meta"><i class="tile-num">06</i><i class="tile-tier">NOTE</i></span>
               <em>Lessons stay hidden here</em>
               <span class="tile-say">Switch back any time with the toggle above the keys.</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -344,15 +356,31 @@
           <summary class="section-rule studio-summary"><span>STUDIO</span></summary>
 
           <div class="mt-4 flex flex-wrap items-center gap-2">
-            <button id="prev-preset" class="mini" type="button">A −</button>
-            <button id="next-preset" class="mini" type="button">A +</button>
+            <label class="picker">
+              <span>Layer A</span>
+              <!-- Options are built from FACTORY_SAMPLES in app.ts so the list can
+                   never drift from the data behind it. -->
+              <select id="layer-a-pick" class="mini" aria-label="Instrument for layer A"></select>
+            </label>
             <button id="lock-a" class="mini" type="button">Lock A</button>
-            <button id="prev-b" class="mini" type="button">B −</button>
-            <button id="next-b" class="mini" type="button">B +</button>
+            <label class="picker">
+              <span>Layer B</span>
+              <select id="layer-b-pick" class="mini" aria-label="Instrument for layer B"></select>
+            </label>
             <button id="lock-b" class="mini" type="button">Lock B</button>
             <label class="mini file">
               Import
               <input id="user-sample" type="file" accept="audio/*" class="sr-only" />
+            </label>
+            <label class="picker">
+              <span>Drums</span>
+              <select id="drum-pick" class="mini" aria-label="Drum pattern">
+                <option value="">Off</option>
+                <option value="backbeat">Backbeat</option>
+                <option value="house">House</option>
+                <option value="techno">Techno</option>
+                <option value="garage">Garage</option>
+              </select>
             </label>
             <select id="user-layer" class="mini" aria-label="Import to layer">
               <option value="A">to A</option>

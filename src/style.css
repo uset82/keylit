@@ -326,6 +326,10 @@ body {
 select.ghost-btn,
 select.mini {
   appearance: none;
+  /* The option popup is painted by the OS, which ignores the select's own
+     background. Without this the list came out white while the options
+     inherited light text from .ghost-btn — invisible rows. */
+  color-scheme: dark;
   -webkit-appearance: none;
   padding-right: 26px;
   background-image:
@@ -339,6 +343,31 @@ select.mini {
   background-size: 4px 4px, 4px 4px, auto;
   background-repeat: no-repeat;
 }
+
+/* Belt and braces for platforms that style the list from the option itself. */
+select.ghost-btn option,
+select.mini option {
+  background: var(--chassis-2);
+  color: var(--text);
+}
+
+/* Instrument pickers: a visible label, because the old -/+ buttons gave no clue
+   which layer you were changing or what was in the list. */
+.picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.picker > span {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--label-dim);
+}
+
+.picker select { min-width: 118px; }
 
 .generate {
   background: linear-gradient(180deg, #f6dc90, #c4922c);

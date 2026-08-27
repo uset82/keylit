@@ -2,6 +2,7 @@ import { getContext, noteOn } from "./audio";
 import { state } from "../store";
 import { holdNote, releaseNote } from "../ui/keyboard";
 import type { PhraseNote } from "../types";
+import { playDrum } from "./drums";
 
 /**
  * The clock behind timed lessons: a metronome, and the looping backing part for a
@@ -33,6 +34,15 @@ type Loop = { notes: PhraseNote[]; loopBeats: number };
 let anchor: number | null = null;
 let metronome = false;
 let loop: Loop | null = null;
+
+/**
+ * The drum loop runs on its own cursor rather than joining `loop`, because the
+ * two go to different places: melodic loop notes are voiced by the sampled
+ * instrument through noteOn, drums are synthesised straight to the destination.
+ */
+let drums: Loop | null = null;
+let drumIndex = 0;
+let drumBase = 0;
 let nextClickBeat = 0;
 /** Index of the next loop note to schedule, and the beat its pass started on. */
 let loopIndex = 0;
@@ -100,6 +110,17 @@ const pump = (): void => {
       loopBase += loop.loopBeats;
     }
   }
+  while (drums?.notes.length) {
+    const item = drums.notes[drumIndex];
+    const when = timeOfBeat(drumBase + item.startBeat);
+    if (when >= horizon) break;
+    playDrum(ctx, item.midi, when, item.velocity);
+    drumIndex += 1;
+    if (drumIndex >= drums.notes.length) {
+      drumIndex = 0;
+      drumBase += drums.loopBeats;
+    }
+  }
 };
 
 const clearPending = (): void => {
@@ -112,17 +133,35 @@ const reset = (): void => {
   nextClickBeat = 0;
   loopIndex = 0;
   loopBase = 0;
+  drumIndex = 0;
+  drumBase = 0;
 };
 
 export const isTransportRunning = (): boolean => timer !== null;
 
+/**
+ * Turn the backing beat on or off without touching the metronome or a running
+ * lesson's accompaniment. Passing null stops only the drums.
+ */
+export const setDrumLoop = (next: Loop | null): void => {
+  startTransport({ metronome, loop, drums: next });
+};
+
+/** Whether a beat is currently looping, for the UI toggle. */
+export const drumsRunning = (): boolean => drums !== null;
+
 /** Start clicking, looping, or both. Notes must be sorted by `startBeat`. */
-export const startTransport = (options: { metronome?: boolean; loop?: Loop | null } = {}): void => {
+export const startTransport = (options: { metronome?: boolean; loop?: Loop | null; drums?: Loop | null } = {}): void => {
   const hadLoop = Boolean(loop);
+  // Drums outlive a lesson: a beat you asked for should keep playing when the
+  // lesson that happened to be running ends. `undefined` therefore means "leave
+  // it alone", and only an explicit null stops it.
+  const keepDrums = options.drums === undefined ? drums : options.drums;
   stopTransport();
   metronome = Boolean(options.metronome);
   loop = options.loop ?? null;
-  if (!metronome && !loop) return;
+  drums = keepDrums;
+  if (!metronome && !loop && !drums) return;
   reset();
   if (hadLoop) clearPending();
   timer = window.setInterval(pump, TICK_MS);
