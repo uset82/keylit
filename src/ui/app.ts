@@ -335,6 +335,12 @@ const renderMessages = (): void => {
     ? `${bubbles}<p class="bubble agent pending"><span>agent</span>Thinking<i></i><i></i><i></i></p>`
     : bubbles;
   log.scrollTop = log.scrollHeight;
+  // Which element actually scrolls depends on the layout: the log itself when
+  // the transcript is stacked under the chips, the <details> around it when it
+  // is a sidebar column. Scrolling a box that does not overflow is a no-op, so
+  // nudging both keeps the newest message in view without asking which is which.
+  const panel = log.closest<HTMLElement>(".chat-transcript");
+  if (panel) panel.scrollTop = panel.scrollHeight;
 };
 
 /**
@@ -644,10 +650,29 @@ const armEverything = (): void => {
   primeSpeech();
 };
 
+/**
+ * The transcript stays a <details> so a phone can fold it away, where every row
+ * it takes is a row off the keybed. From 1024px up the stylesheet gives it a
+ * column of its own, and a conversation you have to unfold to read is one nobody
+ * reads — so pin it open there. Open is a DOM attribute, not something the
+ * stylesheet that owns the rest of this layout can set.
+ */
+const mountTranscript = (): void => {
+  const transcript = document.querySelector<HTMLDetailsElement>(".chat-transcript");
+  if (!transcript) return;
+  const wide = window.matchMedia("(min-width: 1024px)");
+  const sync = (): void => {
+    transcript.open = wide.matches;
+  };
+  sync();
+  wide.addEventListener("change", sync);
+};
+
 export const mountApp = (): void => {
   mountIntro(armEverything);
   mountMode();
   mountVoice();
+  mountTranscript();
   renderKeys();
   renderMessages();
   updateView();

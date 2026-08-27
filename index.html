@@ -210,6 +210,11 @@
       </div>
     </header>
 
+    <!-- The teacher comes before the instrument in source order, so a phone reads
+         "here is what to play next" above the keys and a screen reader reaches it
+         first. On a wide screen .stage places it in a column to the right instead,
+         where the conversation is worth more than the vertical space it costs. -->
+    <div class="stage">
     <div class="chat-bar-wrap">
       <section class="chat-bar" aria-label="Piano teacher">
         <div class="chat-line">
@@ -490,6 +495,7 @@
       </section>
 
     </main>
+    </div>
 
     <!-- Lesson Accomplishment & Star Celebration Modal (newideas.md #2) -->
     <section id="celebration-modal" class="celebration-backdrop hidden" aria-label="Lesson completed">

@@ -1835,6 +1835,106 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 
 /* ---------- responsive ---------- */
 
+/* ============================================================
+   WIDE LAYOUT — the teacher moves into a column of its own.
+
+   Stacked, the transcript has to stay folded away, because every row it
+   takes is a row off the keybed. From a landscape tablet up there is idle
+   width on both sides of the page instead, so the conversation goes there
+   and can be read in full without costing the keys a single pixel.
+
+   The instrument does get a narrower column, but not smaller keys: the bed
+   is min-width: whites × --white-w and pans when it does not fit, so the
+   floor under a white key holds at 56px (64px on touch) either way. What
+   changes is how many keys are in view before it pans, and renderKeys only
+   lays out the octaves a lesson needs while revealKey pans to the target.
+   ============================================================ */
+@media (min-width: 1024px) {
+  .stage {
+    display: grid;
+    /* Rises with the viewport, so a big monitor spends its extra width on the
+       keys rather than on a chat column nobody needs to be 500px wide. */
+    grid-template-columns: minmax(0, 1fr) clamp(288px, 22vw, 380px);
+    gap: 18px;
+    max-width: 1760px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Match the wider stage, or the header floats short of the content. */
+  .page-head { max-width: 1760px; }
+
+  /* Placed explicitly, against source order: the instrument holds column one
+     while the teacher, which comes first in the DOM, sits to its right. */
+  /* margin:0 matters as much as the width here. Both columns centre themselves
+     when stacked, and an auto side margin stops a grid item stretching: it
+     shrink-to-fits and lets the margins eat the rest. With .chat-bar taken out
+     of flow there is no in-flow content left to measure, so the wrapper would
+     collapse to nothing at all. */
+  .stage > main {
+    grid-area: 1 / 1;
+    margin: 0;
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* The panel takes its height from the instrument beside it, never the other
+     way round. A grid row is sized by its tallest item's content, and an
+     uncapped transcript is as tall as the conversation — left in flow, fifty
+     messages would stretch the row, and the stretched rack with it, to several
+     screens. Taking .chat-bar out of flow drops it out of that calculation:
+     the row is the rack's height, and inset:0 hands exactly that back. */
+  .stage > .chat-bar-wrap {
+    position: relative;
+    grid-area: 1 / 2;
+    min-width: 0;
+    margin: 0;
+    max-width: none;
+    padding: 0;
+    /* Floor for the short-rack case, e.g. DJ mode with STUDIO collapsed. Well
+       under the rack's natural height, so it costs the page nothing. */
+    min-height: 460px;
+  }
+
+  .chat-bar {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .chat-form { width: 100%; }
+
+  /* The whole point of the column: the transcript takes every row the rows
+     above it did not claim, and scrolls inside itself rather than pushing the
+     panel open.
+
+     It is the transcript that scrolls, not the .agent-log inside it, because
+     only the transcript is a direct child of the flex panel — flex:1 with
+     min-height:0 caps it exactly. Sizing the log instead would mean reaching
+     through <details>, whose content the browser parks in a slot of its own
+     that the flex chain does not cross. */
+  .chat-transcript {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .chat-transcript summary { margin-bottom: 8px; }
+
+  /* The 220px cap is there to stop a stacked transcript eating the keybed.
+     Nothing to protect here: the panel already bounds it. */
+  .agent-log { max-height: none; }
+
+  /* Three columns do not fit in 288px, so the player takes a row of its own. */
+  .music-result { grid-template-columns: minmax(0, 1fr) auto; }
+  .music-result audio { grid-column: 1 / -1; }
+}
+
 @media (pointer: coarse) {
   :root { --t-key: 32ms; --white-w: 64px; }
   .key { animation: none; }
