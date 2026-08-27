@@ -2693,9 +2693,71 @@ button.bento-tile { cursor: pointer; }
   .tile-say { font-size: 11.5px; }
   .bento-tile.is-hero .tile-say,
   .bento-tile.is-featured .tile-say { font-size: 12.5px; }
-  /* Small tiles have no room for a diagram AND a label. */
   .bento-tile:not(.is-hero):not(.is-featured):not(.is-wide)::after { opacity: .28; }
   .intro-lede { font-size: 13.5px; }
+}
+
+/* ---- tile chips row for style picker ---- */
+.tile-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.tile-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 79, 193, 0.4);
+  background: rgba(255, 79, 193, 0.12);
+  color: #ffe9f8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: lowercase;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: all 150ms var(--ease-out);
+}
+
+.tile-chip:hover {
+  background: rgba(255, 79, 193, 0.35);
+  border-color: rgba(255, 79, 193, 0.85);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(255, 79, 193, 0.5);
+}
+
+.tile-chip:active {
+  transform: translateY(0);
+}
+
+/* Spotlight highlight on studio rack controls when guided by pedagogical agent */
+.spotlight-pulse {
+  position: relative;
+  border-radius: 8px;
+  outline: 2px solid rgba(255, 79, 193, 0.85) !important;
+  outline-offset: 4px;
+  box-shadow: 0 0 22px rgba(255, 79, 193, 0.65), inset 0 0 12px rgba(255, 79, 193, 0.25) !important;
+  animation: spotlight-glow 2.4s ease-in-out forwards;
+}
+
+@keyframes spotlight-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 79, 193, 0);
+  }
+  20%, 70% {
+    box-shadow: 0 0 28px rgba(255, 79, 193, 0.8), inset 0 0 14px rgba(255, 79, 193, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(255, 79, 193, 0);
+    outline-color: transparent !important;
+  }
 }
 
 /* keep last */

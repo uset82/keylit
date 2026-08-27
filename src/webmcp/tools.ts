@@ -189,6 +189,10 @@ export const instrumentTools = (): ToolDefinition[] => [
     execute: ({ title }) =>
       withAgent("teach-phrase", () => {
         if (!state.phrase.length) return textResult("There is no phrase yet. Call generate-phrase first.");
+        // DJ mode hides the step counter and the next-key hint, so a lesson
+        // started from the DJ chips would be one glowing key and nothing to
+        // explain it. Teaching is teach mode.
+        applyAppMode("teach");
         const lesson = startPhraseLesson(state.phrase, String(title || `${state.style.toUpperCase()} riff`));
         if (!lesson) return textResult("That phrase has nothing in the first two bars to teach.");
         return textResult(
@@ -689,6 +693,109 @@ export const instrumentTools = (): ToolDefinition[] => [
         return next === "dj"
           ? textResult("DJ mode. Lessons are hidden and the STUDIO deck is open — pick a style and hit Generate.")
           : textResult("Teaching mode. The curriculum is back. Ask me for a lesson and I will light the first key.");
+      }),
+  },
+  {
+    name: "focus-control",
+    description: "Open the STUDIO drawer and visually highlight controls: 'fx', 'layers', 'tempo', 'phrase', or 'studio'.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        target: { type: "string", enum: ["fx", "layers", "tempo", "phrase", "studio"] },
+      },
+      required: ["target"],
+    },
+    execute: ({ target }) =>
+      withAgent("focus-control", () => {
+        applyAppMode("dj");
+        window.dispatchEvent(new CustomEvent("keylit:focus-control", { detail: { target: String(target || "studio") } }));
+        return textResult(`Focused ${target} in Studio drawer`);
+      }),
+  },
+  {
+    name: "make-track",
+    description: "Generate a complete track in one of the 5 styles (piano, rave, house, techno, garage) with matching sound design, BPM, and drum groove.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        style: { type: "string", enum: ["piano", "rave", "house", "techno", "garage"] },
+        bars: { type: "integer", enum: [4, 8] },
+      },
+      required: ["style"],
+    },
+    execute: ({ style, bars }) =>
+      withAgent("make-track", async () => {
+        await initAudio();
+        applyAppMode("dj");
+        const nextStyle = (style as PhraseStyle) || "house";
+        const nextBars = (bars as 4 | 8) || 4;
+        const bpm = styleBpm(nextStyle);
+
+        if (nextStyle === "piano") {
+          patchLayer("A", { sampleId: "pn-ivory", kind: "piano", volume: 0.9, transpose: 0 });
+          patchLayer("B", { sampleId: "ok-bloom", kind: "orchestra", volume: 0.25, transpose: 0 });
+          patchState({
+            adsr: { attack: 0.002, decay: 0.42, sustain: 0.72, release: 0.55 },
+            fx: { filter: 0.92, distortion: 0, crush: 0, delay: 0.08, reverb: 0.24 },
+            drums: "backbeat",
+          });
+          setDrumLoop(drumLoop("backbeat"));
+        } else if (nextStyle === "rave") {
+          patchLayer("A", { sampleId: "sy-rail", kind: "synth", volume: 0.88, transpose: 0 });
+          patchLayer("B", { sampleId: "or-reed", kind: "organ", volume: 0.28, transpose: 12 });
+          patchState({
+            adsr: { attack: 0.001, decay: 0.2, sustain: 0.24, release: 0.16 },
+            fx: { filter: 0.72, distortion: 0.14, crush: 0.12, delay: 0.18, reverb: 0.18 },
+            drums: "house",
+          });
+          setDrumLoop(drumLoop("house"));
+        } else if (nextStyle === "techno") {
+          patchLayer("A", { sampleId: "sy-rail", kind: "synth", volume: 0.84, transpose: 0 });
+          patchLayer("B", { volume: 0 });
+          patchState({
+            adsr: { attack: 0.001, decay: 0.14, sustain: 0.18, release: 0.12 },
+            fx: { filter: 0.7, distortion: 0.12, crush: 0.14, delay: 0.12, reverb: 0.12 },
+            drums: "techno",
+          });
+          setDrumLoop(drumLoop("techno"));
+        } else if (nextStyle === "garage") {
+          patchLayer("A", { sampleId: "sy-razor", kind: "synth", volume: 0.88, transpose: 0 });
+          patchLayer("B", { sampleId: "pn-felt", kind: "piano", volume: 0.25, transpose: 0 });
+          patchState({
+            adsr: { attack: 0.002, decay: 0.25, sustain: 0.35, release: 0.22 },
+            fx: { filter: 0.84, distortion: 0.06, crush: 0.06, delay: 0.16, reverb: 0.2 },
+            drums: "garage",
+          });
+          setDrumLoop(drumLoop("garage"));
+        } else {
+          // house
+          patchLayer("A", { sampleId: "sy-rail", kind: "synth", volume: 0.86, transpose: 0 });
+          patchLayer("B", { volume: 0 });
+          patchState({
+            adsr: { attack: 0.002, decay: 0.24, sustain: 0.3, release: 0.2 },
+            fx: { filter: 0.82, distortion: 0.06, crush: 0.08, delay: 0.14, reverb: 0.18 },
+            drums: "house",
+          });
+          setDrumLoop(drumLoop("house"));
+        }
+
+        applyFx();
+        await warmCurrentPatches();
+
+        const phrase = generatePhrase(nextStyle, nextBars);
+        patchState({
+          style: nextStyle,
+          bars: nextBars,
+          bpm,
+          presetName: `${nextStyle.toUpperCase()} TRACK`,
+        });
+        retimeTransport();
+        setPhrase(phrase);
+        playPhrase(phrase);
+
+        window.dispatchEvent(new CustomEvent("keylit:focus-control", { detail: { target: "phrase" } }));
+
+        return textResult(`Track built: ${nextStyle} (${nextBars} bars, ${bpm} BPM, ${phrase.length} notes on roll with ${state.drums} drum groove).`);
       }),
   },
 ];

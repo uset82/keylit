@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build && node scripts/prepare-site.mjs",
     "preview": "vite preview",
     "test:design": "node scripts/check-design.mjs",
+    "test:generate": "node scripts/check-generate.mjs",
     "test:music": "node scripts/check-music.mjs"
   },
   "dependencies": {

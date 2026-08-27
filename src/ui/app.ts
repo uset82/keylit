@@ -882,12 +882,41 @@ export const mountApp = (): void => {
     player?.load();
     document.querySelector("#music-result")?.classList.add("hidden");
   });
-  document.querySelectorAll<HTMLButtonElement>("[data-recipe]").forEach((button) => {
-    button.addEventListener("click", () => {
+  document.querySelectorAll<HTMLElement>("[data-recipe]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      event.stopPropagation();
       const field = document.querySelector<HTMLInputElement>("#agent-input");
-      if (field) field.value = button.dataset.recipe ?? "";
+      if (field) field.value = element.dataset.recipe ?? "";
       void handleAgent();
     });
+  });
+
+  window.addEventListener("keylit:focus-control", (event: Event) => {
+    const custom = event as CustomEvent<{ target: string }>;
+    const target = custom.detail?.target;
+    const studio = document.querySelector<HTMLDetailsElement>(".studio");
+    if (studio) studio.open = true;
+    let highlightTarget: HTMLElement | null = null;
+    if (target === "fx") {
+      highlightTarget = document.querySelector<HTMLElement>(".fx-row");
+    } else if (target === "layers") {
+      highlightTarget = document.querySelector<HTMLElement>("#layer-a-pick")?.closest(".flex") ?? null;
+    } else if (target === "tempo") {
+      highlightTarget = document.querySelector<HTMLElement>(".tempo-slider") ?? document.querySelector<HTMLElement>(".tempo-tools");
+    } else if (target === "phrase") {
+      highlightTarget = document.querySelector<HTMLElement>("#phrase-roll");
+    } else {
+      highlightTarget = studio;
+    }
+    if (highlightTarget) {
+      highlightTarget.classList.remove("spotlight-pulse");
+      void highlightTarget.offsetWidth;
+      highlightTarget.classList.add("spotlight-pulse");
+      highlightTarget.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      window.setTimeout(() => {
+        highlightTarget?.classList.remove("spotlight-pulse");
+      }, 2500);
+    }
   });
 
   const celebrationModal = document.querySelector<HTMLElement>("#celebration-modal");
