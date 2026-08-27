@@ -9,7 +9,17 @@ import {
   warmCurrentPatches,
 } from "../engine/audio";
 import { duetLine, nameList, recentTake } from "../engine/duet";
-import { currentStep, nextMidi, teacherLine } from "../engine/lessons";
+import {
+  currentStep,
+  fingerBadge,
+  fingerLine,
+  isNextTarget,
+  landmarkPitchClasses,
+  nextFingers,
+  nextHands,
+  nextMidi,
+  teacherLine,
+} from "../engine/lessons";
 import { playHuman, releaseHuman } from "../engine/perform";
 import { generatePhrase } from "../engine/generate";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
@@ -25,13 +35,13 @@ import {
   state,
   subscribe,
 } from "../store";
-import type { LayerId, PhraseStyle } from "../types";
+import type { Hand, LayerId, PhraseStyle } from "../types";
 import { KEY_COUNT, START_MIDI, isBlack, midiToComputerKey, qwertyToMidi } from "./keyboard";
 
 const messages: AgentMessage[] = [
   {
     role: "agent",
-    text: "Never guess the next note. Press teach me — I glow the key, you play it, I hear you here. Cyan is next. Amber is you. Green is me.",
+    text: "Never played before? Press teach me. First I show you how to FIND a note — the black keys come in groups of 2 and 3, and C hides just left of every group of 2. Violet means look here. Cyan means play this. Amber is you. Green is me.",
   },
 ];
 
@@ -94,10 +104,12 @@ const dressKey = (key: HTMLButtonElement, midi: number): void => {
   const face = document.createElement("span");
   face.className = "key-face";
   key.appendChild(face);
-  if (midi % 12 === 0) {
+  // Beginner mode letters every white key. Black keys stay unlabelled on purpose:
+  // "C#" means nothing to a first-timer, and there is no room under the lip.
+  if (!isBlack(midi)) {
     const name = document.createElement("span");
     name.className = "key-name";
-    name.textContent = noteLabel(midi);
+    name.textContent = midi % 12 === 0 ? noteLabel(midi) : NOTE_NAMES[midi % 12];
     key.appendChild(name);
   }
 };
@@ -142,6 +154,44 @@ const renderMessages = (): void => {
   log.scrollTop = log.scrollHeight;
 };
 
+/**
+ * Create, update or remove a small overlay span on a key. Empty text removes it,
+ * which also stops the badge rendering as an empty pill on F5-B5 (no QWERTY key).
+ */
+const setKeyTag = (key: HTMLElement, className: string, text: string): void => {
+  const existing = key.querySelector(`.${className}`);
+  if (!text) {
+    existing?.remove();
+    return;
+  }
+  if (existing) {
+    existing.textContent = text;
+    return;
+  }
+  const tag = document.createElement("span");
+  tag.className = className;
+  tag.textContent = text;
+  key.appendChild(tag);
+};
+
+/** Light the finger(s) the current step asks for, and hide the map when none. */
+const renderHands = (): void => {
+  const map = document.querySelector("#hand-map");
+  if (!map) return;
+  const fingers = nextFingers();
+  const hands = nextHands();
+  map.classList.toggle("hidden", fingers.length === 0);
+  map.querySelectorAll<HTMLElement>("[data-hand]").forEach((hand) => {
+    const side = hand.dataset.hand as Hand;
+    hand.classList.toggle("active", hands.includes(side));
+    hand.querySelectorAll<HTMLElement>(".digit").forEach((digit) => {
+      const finger = Number(digit.dataset.finger);
+      const lit = fingers.some((value, index) => value === finger && (hands[index] ?? hands[0]) === side);
+      digit.classList.toggle("lit", lit);
+    });
+  });
+};
+
 const updateView = (): void => {
   const set = (id: string, text: string) => {
     const el = document.querySelector(id);
@@ -160,10 +210,15 @@ const updateView = (): void => {
   set("#take-notes", nameList(recentTake().map((event) => event.midi)));
   const step = currentStep();
   const targets = nextMidi();
-  set("#lesson-next", targets.length ? `${nameList(targets)} · ${targets.map((midi) => midiToComputerKey(midi) ?? "").filter(Boolean).join(" ") || "click the glow"}` : "Press teach me");
+  const landmarks = landmarkPitchClasses();
+  const fingering = fingerLine();
+  const nextHint = step?.anyOctave
+    ? `${nameList(targets)} · any octave`
+    : `${nameList(targets)}${fingering ? ` · ${fingering}` : ""} · ${targets.map((midi) => midiToComputerKey(midi) ?? "").filter(Boolean).join(" ") || "click the glow"}`;
+  set("#lesson-next", targets.length ? nextHint : "Press teach me");
   set("#lesson-progress", state.lesson ? `${Math.min(state.lesson.stepIndex + 1, state.lesson.steps.length)} / ${state.lesson.steps.length}` : "NO LESSON");
   set("#lesson-hits", state.lesson ? `${state.lesson.hits} hit · ${state.lesson.misses} miss` : "0 / 0");
-  set("#lesson-coach", step?.coach ?? (state.lesson?.lastGrade === "done" ? "You did it. Ask for Twinkle, or hold a chord and say harmonize." : "Press teach me. Your first note is already waiting."));
+  set("#lesson-coach", step?.coach ?? (state.lesson?.lastGrade === "done" ? "You did it. Ask for Twinkle, or hold a chord and say harmonize." : "Press teach me. I will show you where C is first."));
   set("#pedal-label", state.sustain ? "SUSTAIN · DOWN" : "SUSTAIN · UP");
   set("#lcd-adsr", `A ${Math.round(state.adsr.attack * 1000)}ms  D ${Math.round(state.adsr.decay * 1000)}ms  S ${Math.round(state.adsr.sustain * 100)}%  R ${Math.round(state.adsr.release * 1000)}ms`);
   set("#midi-label", state.midiDevice);
@@ -182,6 +237,8 @@ const updateView = (): void => {
   document.querySelector("#duet-strip")?.classList.toggle("together", together);
   document.querySelector("#lesson-strip")?.classList.toggle("teaching", teaching);
   document.querySelector("#lesson-pill")?.classList.toggle("live", teaching);
+  document.querySelector("#piano")?.classList.toggle("show-names", state.noteNames);
+  document.querySelector("#note-names")?.classList.toggle("live", state.noteNames);
   document.querySelectorAll<HTMLInputElement>("[data-knob]").forEach((input) => {
     const key = input.dataset.knob;
     if (!key) return;
@@ -204,23 +261,17 @@ const updateView = (): void => {
     const midi = Number(key.dataset.midi);
     const you = state.humanHeld.includes(midi);
     const agent = state.agentHeld.includes(midi);
-    const next = targets.includes(midi) && !you;
+    const next = isNextTarget(midi) && !you;
     key.classList.toggle("on-human", you && !agent);
     key.classList.toggle("on-agent", agent && !you);
     key.classList.toggle("on-both", you && agent);
     key.classList.toggle("on-next", next);
-    let badge = key.querySelector(".key-badge");
-    if (next) {
-      if (!badge) {
-        badge = document.createElement("span");
-        badge.className = "key-badge";
-        key.appendChild(badge);
-      }
-      badge.textContent = midiToComputerKey(midi) ?? "";
-    } else if (badge) {
-      badge.remove();
-    }
+    // Violet "look here" cue on the black-key group that locates the target.
+    key.classList.toggle("on-landmark", landmarks.includes(midi % 12));
+    setKeyTag(key, "key-badge", next ? midiToComputerKey(midi) ?? "" : "");
+    setKeyTag(key, "key-finger", next ? fingerBadge(midi) : "");
   });
+  renderHands();
   renderRoll();
 };
 
@@ -321,6 +372,9 @@ export const mountApp = (): void => {
   document.querySelector("#style")?.addEventListener("change", (event) => {
     const value = (event.target as HTMLSelectElement).value as PhraseStyle;
     patchState({ style: value });
+  });
+  document.querySelector("#note-names")?.addEventListener("click", () => {
+    patchState({ noteNames: !state.noteNames });
   });
   document.querySelector("#bars")?.addEventListener("click", () => {
     patchState({ bars: state.bars === 4 ? 8 : 4 });

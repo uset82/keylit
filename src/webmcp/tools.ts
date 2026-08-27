@@ -125,23 +125,23 @@ export const instrumentTools = (): ToolDefinition[] => [
   },
   {
     name: "list-lessons",
-    description: "List beginner piano lessons on this live page: first keys, C scale, C chord, Twinkle, Ode to Joy.",
+    description: "List beginner piano lessons on this live page, easiest first: landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-scale, c-chord, twinkle, ode, birthday.",
     inputSchema: { type: "object", properties: {} },
     execute: () => textResult(JSON.stringify({ lessons: listLessons() }, null, 2)),
   },
   {
     name: "start-lesson",
     description:
-      "Start a piano lesson on this shared keyboard. Lights the next keys the student must play. Lessons: first-keys, c-scale, c-chord, twinkle, ode. Teaching only works if they play those keys on this page.",
+      "Start a piano lesson on this shared keyboard. Lights the next keys the student must play. Lessons: landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-scale, c-chord, twinkle, ode, birthday. Teaching only works if they play those keys on this page.",
     inputSchema: {
       type: "object",
       properties: {
-        lesson: { type: "string", description: "first-keys, c-scale, c-chord, twinkle, ode, or a song name" },
+        lesson: { type: "string", description: "landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-scale, c-chord, twinkle, ode, birthday, or a song name" },
       },
     },
     execute: ({ lesson }) =>
       withAgent("start-lesson", () => {
-        const id = resolveLessonId(String(lesson ?? "first-keys")) ?? "first-keys";
+        const id = resolveLessonId(String(lesson ?? "landmarks")) ?? "landmarks";
         const started = startLesson(id);
         const step = currentStep();
         return textResult(
@@ -192,11 +192,11 @@ export const instrumentTools = (): ToolDefinition[] => [
   {
     name: "show-next-keys",
     description:
-      "Show the student the next keys on the shared piano (glow + computer-key letters). Starts first-keys if no lesson is running. Does not play the notes for them.",
+      "Show the student the next keys on the shared piano. Target keys glow cyan; on a find-the-note step the black-key group that locates them glows violet. Starts the landmarks lesson if none is running. Does not play the notes for them.",
     inputSchema: { type: "object", properties: {} },
     execute: () =>
       withAgent("show-next-keys", () => {
-        if (!state.lesson) startLesson("first-keys");
+        if (!state.lesson) startLesson("landmarks");
         const step = currentStep();
         const next = nextMidi();
         if (!next.length) {

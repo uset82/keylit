@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Tektur:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/tailwind.css" />
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body class="min-h-screen bg-ink text-[#e6e2d8] font-mono">
     <div class="grain" aria-hidden="true"></div>
@@ -163,26 +165,68 @@
             <span id="agent-notes" class="duet-notes">—</span>
           </div>
           <div id="phrase-roll" class="roll" aria-label="Phrase roll"></div>
-          <p class="mt-3 text-[10px] tracking-[0.16em] text-[#7c838a]">
-            Cyan = play this next · amber = you · green = agent · A–' / Z–M · Web MIDI · sustain CC64
-          </p>
+          <div class="keybed-bar">
+            <p class="keybed-legend">
+              Cyan = play this next · violet = look here · amber = you · green = agent
+            </p>
+            <button id="note-names" class="mini" type="button">Note names</button>
+          </div>
+
+          <div id="hand-map" class="hand-map hidden" aria-hidden="true">
+            <div class="hand" data-hand="L">
+              <svg viewBox="0 0 132 96" class="hand-svg">
+                <g class="hand-outline" transform="scale(-1,1) translate(-132,0)">
+                  <path d="M20 96 V62 q0-9 9-9 t9 9 v-6 l6-30 q2-8 10-6 t6 10 l-4 26 v-4 l4-34 q1-8 9-7 t7 9 l-2 36 v-2 l7-30 q2-8 10-6 t6 10 l-7 32 3-14 q2-7 9-5 t5 9 l-8 34 q-4 18-22 18 z" />
+                </g>
+                <g class="hand-digits">
+                  <g class="digit" data-finger="5"><circle cx="17" cy="46" r="10" /><text x="17" y="50">5</text></g>
+                  <g class="digit" data-finger="4"><circle cx="41" cy="26" r="10" /><text x="41" y="30">4</text></g>
+                  <g class="digit" data-finger="3"><circle cx="65" cy="18" r="10" /><text x="65" y="22">3</text></g>
+                  <g class="digit" data-finger="2"><circle cx="89" cy="26" r="10" /><text x="89" y="30">2</text></g>
+                  <g class="digit" data-finger="1"><circle cx="114" cy="56" r="10" /><text x="114" y="60">1</text></g>
+                </g>
+              </svg>
+              <em>LEFT</em>
+            </div>
+            <div class="hand" data-hand="R">
+              <svg viewBox="0 0 132 96" class="hand-svg">
+                <g class="hand-outline">
+                  <path d="M20 96 V62 q0-9 9-9 t9 9 v-6 l6-30 q2-8 10-6 t6 10 l-4 26 v-4 l4-34 q1-8 9-7 t7 9 l-2 36 v-2 l7-30 q2-8 10-6 t6 10 l-7 32 3-14 q2-7 9-5 t5 9 l-8 34 q-4 18-22 18 z" />
+                </g>
+                <g class="hand-digits">
+                  <g class="digit" data-finger="1"><circle cx="17" cy="56" r="10" /><text x="17" y="60">1</text></g>
+                  <g class="digit" data-finger="2"><circle cx="41" cy="26" r="10" /><text x="41" y="30">2</text></g>
+                  <g class="digit" data-finger="3"><circle cx="65" cy="18" r="10" /><text x="65" y="22">3</text></g>
+                  <g class="digit" data-finger="4"><circle cx="89" cy="26" r="10" /><text x="89" y="30">4</text></g>
+                  <g class="digit" data-finger="5"><circle cx="114" cy="46" r="10" /><text x="114" y="50">5</text></g>
+                </g>
+              </svg>
+              <em>RIGHT</em>
+            </div>
+          </div>
+
           <div id="piano" class="piano" role="group" aria-label="Virtual piano"></div>
         </div>
       </section>
 
       <aside class="agent-panel" aria-label="Piano teacher">
         <p class="text-[10px] tracking-[0.3em] text-amber">YOUR TEACHER IS ON THE KEYS</p>
-        <h2 class="font-display text-2xl mt-1">Never guess the next note</h2>
+        <h2 class="font-display text-2xl mt-1">First, find the note</h2>
         <p class="mt-2 text-[12px] leading-relaxed text-[#b9bfc4]">
           I glow it. You play it. I hear you here — then the next key lights. A chat in another tab cannot do that.
         </p>
-        <p id="lesson-coach" class="take-line">Press teach me. Your first note is already waiting.</p>
+        <p id="lesson-coach" class="take-line">Press teach me. I will show you where C is first.</p>
         <p class="take-line">Last take <span id="take-notes">—</span></p>
         <div class="mt-3 flex flex-wrap gap-2">
           <button class="chip" data-recipe="teach me" type="button">teach me</button>
+          <button class="chip" data-recipe="find C" type="button">find C</button>
+          <button class="chip" data-recipe="finger numbers" type="button">fingers</button>
+          <button class="chip" data-recipe="left hand" type="button">left hand</button>
+          <button class="chip" data-recipe="both hands" type="button">both hands</button>
           <button class="chip" data-recipe="C scale" type="button">C scale</button>
           <button class="chip" data-recipe="C chord" type="button">C chord</button>
           <button class="chip" data-recipe="Twinkle" type="button">Twinkle</button>
+          <button class="chip" data-recipe="Happy Birthday" type="button">Birthday</button>
           <button id="next-chip" class="chip" data-recipe="show next" type="button">show next</button>
           <button class="chip" data-recipe="hear it" type="button">hear it</button>
           <button class="chip" data-recipe="stop lesson" type="button">stop lesson</button>

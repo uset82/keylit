@@ -23,9 +23,10 @@
   --keybed-h:158px;
 
   /* signal — product-critical, do not mute */
-  --you:231,195,106;        /* amber = human  */
-  --agent:157,255,106;      /* green = agent  */
-  --next:94,200,255;        /* cyan  = play this next */
+  --you:231,195,106;        /* amber  = human  */
+  --agent:157,255,106;      /* green  = agent  */
+  --next:94,200,255;        /* cyan   = play this next */
+  --landmark:186,148,255;   /* violet = look here (black-key group) */
 
   /* light */
   --led-green:#a6ff2e; --led-amber:#ffb545;
@@ -569,7 +570,129 @@ select.mini {
 }
 
 .piano:hover .key-name,
-.piano:focus-within .key-name { opacity: 1; }
+.piano:focus-within .key-name,
+.piano.show-names .key-name { opacity: 1; }
+
+/* ---- landmark: the black-key group that locates the target note ---- */
+/* Static colour, not a pulse — prefers-reduced-motion kills animation. */
+
+.key.black.on-landmark {
+  background-image:
+    linear-gradient(180deg, rgba(var(--landmark),.16) 0%, rgba(var(--landmark),.42) 100%),
+    var(--ebony-face);
+  box-shadow:
+    inset 0 0 0 2px rgba(var(--landmark),.92),
+    inset 0 1px 0 rgba(255,255,255,.22),
+    0 0 16px rgba(var(--landmark),.55);
+}
+
+/* ---- finger number on the key ---- */
+
+.key-finger {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 17px;
+  padding: 2px 5px;
+  border-radius: 99px;
+  background: #f6f4ee;
+  color: #16181a;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .02em;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.55), inset 0 -1px 0 rgba(0,0,0,.12);
+  z-index: 5;
+}
+
+.key.white .key-finger { bottom: 36px; }
+.key.black .key-finger { bottom: 16px; font-size: 10px; min-width: 15px; }
+
+/* ---- hand map, mounted directly above the keybed ---- */
+
+.keybed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.keybed-legend {
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--label-dim);
+}
+
+.hand-map {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 12px;
+  padding: 10px 12px 8px;
+  border-radius: 10px;
+  background: var(--well);
+  border: 1px solid var(--well-line);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.6);
+}
+
+.hand {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  opacity: .38;
+  transition: opacity var(--t-ui) var(--ease-out);
+}
+
+.hand.active { opacity: 1; }
+
+.hand em {
+  font-style: normal;
+  font-size: 8px;
+  letter-spacing: .22em;
+  color: var(--label-dim);
+}
+
+.hand.active em { color: var(--label); }
+
+.hand-svg { width: 116px; height: 84px; }
+
+.hand-outline path {
+  fill: rgba(255,255,255,.05);
+  stroke: var(--hairline);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.hand.active .hand-outline path {
+  fill: rgba(var(--you),.07);
+  stroke: rgba(var(--you),.45);
+}
+
+.digit circle {
+  fill: #1b1e21;
+  stroke: var(--hairline);
+  stroke-width: 1.5;
+  transition: fill var(--t-ui) var(--ease-out), stroke var(--t-ui) var(--ease-out);
+}
+
+.digit text {
+  fill: var(--label-dim);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+  transition: fill var(--t-ui) var(--ease-out);
+}
+
+.digit.lit circle {
+  fill: rgb(var(--you));
+  stroke: #fff3d2;
+}
+
+.digit.lit text { fill: #1b1408; }
 
 /* next-key letter badge (created by updateView) */
 .key-badge {
@@ -757,6 +880,12 @@ select.mini {
   border-color: rgba(157,255,106,.7);
   color: var(--led-green);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 0 10px rgba(157,255,106,.25);
+}
+
+.mini.live {
+  border-color: rgba(var(--next),.7);
+  color: rgb(var(--next));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 0 10px rgba(var(--next),.22);
 }
 
 /* ---------- phrase roll ---------- */

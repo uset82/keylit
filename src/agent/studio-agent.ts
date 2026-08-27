@@ -1,4 +1,4 @@
-import { listTools, runLocal, runTool } from "../webmcp/adapter";
+import { runLocal, runTool } from "../webmcp/adapter";
 
 export type AgentMessage = {
   role: "user" | "agent";
@@ -28,6 +28,11 @@ const RECIPES: Recipe[] = [
     say: "I play it once. Then you copy the glowing keys.",
   },
   {
+    match: /birthday|cumple/,
+    steps: [{ tool: "start-lesson", input: { lesson: "birthday" } }],
+    say: "Happy Birthday. I light the next note. You play it.",
+  },
+  {
     match: /twinkle|star/,
     steps: [{ tool: "start-lesson", input: { lesson: "twinkle" } }],
     say: "Twinkle Twinkle — I light each note. You play it.",
@@ -47,10 +52,37 @@ const RECIPES: Recipe[] = [
     steps: [{ tool: "start-lesson", input: { lesson: "c-chord" } }],
     say: "C major chord. I show C, E, G, then you hold all three.",
   },
+  // These four sit above the greedy /teach|learn|lesson/ recipe below — that one
+  // matches almost every beginner phrasing and would otherwise swallow them.
   {
-    match: /teach|learn|lesson|beginner|first keys?|how (do i|to) play/,
+    match: /both hands|two hands|hands together/,
+    steps: [{ tool: "start-lesson", input: { lesson: "hands-together" } }],
+    say: "Both hands. Left hand low, right hand high, same letters.",
+  },
+  {
+    match: /left hand|lh /,
+    steps: [{ tool: "start-lesson", input: { lesson: "lh-c-position" } }],
+    say: "Left hand. Little finger is 5, and your thumb points to the right.",
+  },
+  {
+    match: /finger|thumb|hand position|five finger|which hand/,
+    steps: [{ tool: "start-lesson", input: { lesson: "rh-c-position" } }],
+    say: "Finger numbers. Thumb is 1, little finger is 5. I light the finger and the key.",
+  },
+  {
+    match: /find (a |any )?c|where is c|black keys?|group of (two|three|2|3)|landmark|find the notes?/,
+    steps: [{ tool: "start-lesson", input: { lesson: "landmarks" } }],
+    say: "The black keys are your map. Groups of 2 and groups of 3. C is left of a group of 2.",
+  },
+  {
+    match: /play c d e|c d e|first keys?/,
     steps: [{ tool: "start-lesson", input: { lesson: "first-keys" } }],
-    say: "Never guess the next note. I glow it. You play it. I hear you here.",
+    say: "C, D, E — three white keys in a row.",
+  },
+  {
+    match: /teach|learn|lesson|beginner|how (do i|to) play/,
+    steps: [{ tool: "start-lesson", input: { lesson: "landmarks" } }],
+    say: "Start here. Nobody can play a note they cannot find — so first I teach you to find C.",
   },
   {
     match: /hear|listen|what.?s on|status|duet|lesson state/,
@@ -165,14 +197,37 @@ const RECIPES: Recipe[] = [
   },
 ];
 
+const humanizeToolText = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("{")) return raw;
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      line?: string;
+      stepCoach?: string | null;
+      nextNames?: string;
+      nextKeys?: string[];
+      hint?: string;
+      teaching?: boolean;
+    };
+    if (parsed.line || parsed.stepCoach || parsed.teaching === false) {
+      return [parsed.line, parsed.stepCoach, parsed.nextNames && parsed.nextNames !== "—" ? `Next: ${parsed.nextNames}` : "", parsed.hint]
+        .filter((part) => Boolean(part))
+        .join("\n");
+    }
+  } catch {
+    /* keep raw */
+  }
+  return raw;
+};
+
 const formatResult = (value: unknown): string => {
   if (!value) return "";
-  if (typeof value === "string") return value;
+  if (typeof value === "string") return humanizeToolText(value);
   if (typeof value === "object" && value !== null && "content" in value) {
     const content = (value as { content?: Array<{ text?: string }> }).content;
-    return content?.map((item) => item.text ?? "").join("\n") ?? JSON.stringify(value);
+    return humanizeToolText(content?.map((item) => item.text ?? "").join("\n") ?? JSON.stringify(value));
   }
-  return JSON.stringify(value);
+  return humanizeToolText(JSON.stringify(value));
 };
 
 const runStep = async (tool: string, input: Record<string, unknown> = {}): Promise<string> => {
@@ -184,10 +239,8 @@ export const runAgentTurn = async (prompt: string): Promise<string> => {
   const text = prompt.trim().toLowerCase();
   const recipe = RECIPES.find((item) => item.match.test(text));
   if (!recipe) {
-    const tools = await listTools();
-    const names = tools.map((tool) => tool.name).join(", ") || "local tool catalog";
     const hearing = await runStep("get-lesson-state");
-    return `Never guess the next note. I glow it. You play it. I hear you here.\n\n${hearing}\n\nTry: teach me, C scale, Twinkle, show next, hear it. Then: harmonize. Tools: ${names}`;
+    return `I can teach a song on these keys. Try: teach me, Happy Birthday, Twinkle, C scale.\n\n${hearing}`;
   }
   const lines: string[] = [recipe.say];
   for (const step of recipe.steps) {

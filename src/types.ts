@@ -10,12 +10,38 @@ export type Player = "human" | "agent";
 
 export type DuetMode = "idle" | "follow";
 
-export type LessonId = "first-keys" | "c-scale" | "c-chord" | "twinkle" | "ode";
+export type LessonId =
+  | "landmarks"
+  | "first-keys"
+  | "rh-c-position"
+  | "lh-c-position"
+  | "hands-together"
+  | "c-scale"
+  | "c-chord"
+  | "twinkle"
+  | "ode"
+  | "birthday";
+
+/** 1 = thumb … 5 = little finger, on both hands. */
+export type Finger = 1 | 2 | 3 | 4 | 5;
+
+export type Hand = "L" | "R";
+
+/** Black keys repeat in a group of two (C#/D#) and a group of three (F#/G#/A#). */
+export type BlackGroup = "two" | "three";
 
 export type LessonStep = {
   midi: number[];
   hold?: boolean;
   coach: string;
+  /** Parallel to `midi`. Prescriptive only — MIDI carries no finger data. */
+  fingers?: Finger[];
+  /** Parallel to `midi`. Omit for steps with no hand guidance. */
+  hands?: Hand[];
+  /** Light every black-key group of this size, in every octave. */
+  landmark?: BlackGroup;
+  /** Grade by pitch class instead of exact MIDI — "press any C". */
+  anyOctave?: boolean;
 };
 
 export type LessonGrade = "wait" | "hit" | "miss" | "done";
@@ -94,6 +120,8 @@ export type InstrumentState = {
   sampleEngine: SampleEngineStatus;
   loadProgress: LoadProgressState;
   sustain: boolean;
+  /** Beginner mode: letter every white key. On by default. */
+  noteNames: boolean;
 };
 
 export type SampleEngineStatus = "idle" | "loading" | "sampled" | "fallback";

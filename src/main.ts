@@ -1,8 +1,6 @@
 import { mountApp } from "./ui/app";
 import { bootWebMcp, registerTools, rememberLocal } from "./webmcp/adapter";
 import { instrumentTools } from "./webmcp/tools";
-import "./tailwind.css";
-import "./style.css";
 
 const tools = instrumentTools();
 rememberLocal(tools);

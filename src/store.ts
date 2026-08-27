@@ -40,6 +40,7 @@ export const state: InstrumentState = {
   sampleEngine: "idle",
   loadProgress: null,
   sustain: false,
+  noteNames: true,
 };
 
 export const subscribe = (listener: () => void): (() => void) => {
