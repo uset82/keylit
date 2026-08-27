@@ -6,7 +6,7 @@
     <title>KEYLIT — learn piano. The next key is already glowing.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Tektur:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&family=Tektur:wght@500;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/tailwind.css" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -15,8 +15,12 @@
 
     <section id="intro" class="intro" aria-label="Welcome to KEYLIT">
       <div class="intro-card">
+        <button id="intro-close-btn" class="intro-close" type="button" aria-label="Close modal">✕</button>
         <div class="intro-head">
-          <p class="intro-eyebrow">ANYONE CAN START · TODAY</p>
+          <div class="flex items-center gap-2">
+            <span class="intro-badge">AI PIANO MENTOR</span>
+            <p class="intro-eyebrow">ANYONE CAN START · TODAY</p>
+          </div>
           <h1 class="intro-title font-display">KEYLIT</h1>
           <p class="intro-lede">
             The next key is already glowing. You play it — and your teacher hears you on
@@ -31,49 +35,65 @@
         </div>
 
         <div class="intro-pick">
-          <p class="intro-kicker">First, find the note</p>
+          <div class="flex items-center justify-between mb-2">
+            <p class="intro-kicker">First, find the note</p>
+            <span class="text-[10px] tracking-wider uppercase text-[#7c838a]">5 Fundamentals</span>
+          </div>
           <div class="intro-grid">
             <button class="lesson-tile" data-recipe="teach me" type="button">
+              <div class="tile-top"><span class="tile-tag">STEP 1</span><span class="tile-icon">🎹</span></div>
               <em>Find any C</em>
               <span>C sits left of every group of 2.</span>
             </button>
             <button class="lesson-tile" data-recipe="first keys" type="button">
+              <div class="tile-top"><span class="tile-tag">STEP 2</span><span class="tile-icon">🎵</span></div>
               <em>Play C D E</em>
               <span>Three white keys in a row.</span>
             </button>
             <button class="lesson-tile" data-recipe="finger numbers" type="button">
+              <div class="tile-top"><span class="tile-tag">STEP 3</span><span class="tile-icon">🖐️</span></div>
               <em>Finger numbers</em>
               <span>Thumb is 1. Little finger is 5.</span>
             </button>
             <button class="lesson-tile" data-recipe="left hand" type="button">
+              <div class="tile-top"><span class="tile-tag">STEP 4</span><span class="tile-icon">👈</span></div>
               <em>Left hand</em>
               <span>The same five fingers, mirrored.</span>
             </button>
             <button class="lesson-tile" data-recipe="both hands" type="button">
+              <div class="tile-top"><span class="tile-tag">STEP 5</span><span class="tile-icon">👐</span></div>
               <em>Both hands</em>
               <span>Low C and middle C together.</span>
             </button>
           </div>
 
-          <p class="intro-kicker">Then play a song</p>
+          <div class="flex items-center justify-between mb-2 mt-6">
+            <p class="intro-kicker">Then play a song</p>
+            <span class="text-[10px] tracking-wider uppercase text-[#7c838a]">5 Repertoire Pieces</span>
+          </div>
           <div class="intro-grid">
             <button class="lesson-tile" data-recipe="C scale" type="button">
+              <div class="tile-top"><span class="tile-tag">SCALE</span><span class="tile-icon">🎼</span></div>
               <em>C major scale</em>
               <span>Eight keys, no black ones.</span>
             </button>
             <button class="lesson-tile" data-recipe="C chord" type="button">
+              <div class="tile-top"><span class="tile-tag">CHORD</span><span class="tile-icon">✨</span></div>
               <em>C major chord</em>
               <span>C, E, G — then hold all three.</span>
             </button>
             <button class="lesson-tile" data-recipe="Twinkle" type="button">
+              <div class="tile-top"><span class="tile-tag">CLASSIC</span><span class="tile-icon">⭐</span></div>
               <em>Twinkle Twinkle</em>
               <span>The tune everybody knows.</span>
             </button>
             <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
+              <div class="tile-top"><span class="tile-tag">ANTHEM</span><span class="tile-icon">🏛️</span></div>
               <em>Ode to Joy</em>
               <span>Beethoven’s first phrase.</span>
             </button>
             <button class="lesson-tile hero" data-recipe="Happy Birthday" type="button">
+              <div class="tile-top"><span class="tile-tag gold">FEATURED</span><span class="tile-icon">🎂</span></div>
               <em>Happy Birthday</em>
               <span>The whole song, one key at a time.</span>
             </button>
@@ -81,8 +101,8 @@
         </div>
 
         <div class="intro-actions">
-          <button id="intro-start" class="generate lg" type="button">Start playing</button>
-          <p class="intro-note">Turns on the sound and looks for a MIDI keyboard. Pick a lesson above, or just play.</p>
+          <button id="intro-start" class="generate lg" type="button">Start playing ⚡</button>
+          <p class="intro-note">Turns on high-fidelity audio & auto-detects USB/Bluetooth MIDI. Pick a lesson or explore freely.</p>
         </div>
       </div>
     </section>
@@ -110,10 +130,12 @@
         <form id="agent-form" class="chat-form">
           <input id="agent-input" class="agent-input" placeholder="Teach me piano…" aria-label="Ask the teacher" />
           <button class="generate sm" type="submit">Go</button>
-          <button class="ghost-btn" data-intro-open type="button">Lessons</button>
+          <button class="ghost-btn songs-btn" data-intro-open type="button" aria-label="Songs and lessons">Songs</button>
         </form>
 
         <div class="chat-chips">
+          <button id="voice-mic" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Talk to the teacher">talk</button>
+          <button id="voice-speak" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Teacher reads each step aloud">hear me</button>
           <button id="next-chip" class="chip" data-recipe="show next" type="button">show next</button>
           <button class="chip" data-recipe="hear it" type="button">hear it</button>
           <button class="chip" data-recipe="stop lesson" type="button">stop lesson</button>
@@ -251,6 +273,7 @@
             <button id="bars" class="ghost-btn" type="button"><span id="bars-label">4 BAR</span></button>
             <button id="generate" class="generate" type="button">Generate</button>
             <button id="export" class="ghost-btn" type="button">Export MIDI</button>
+            <button id="restore" class="ghost-btn" type="button" title="Put the sound back to factory. Keeps your lesson and your volume.">Restore</button>
             <span id="style-label" class="sr-only">piano</span>
           </div>
 
@@ -284,33 +307,48 @@
             </div>
           </div>
 
+          <!-- Hands are built from primitives, not a freehand path: the shape stays
+               legible at 130px and every numeral lands on its own finger. Each hand
+               is drawn palm-down as the player looks at it, so finger 1 (thumb) sits
+               on the INSIDE of each hand — left thumb on the right, right thumb on
+               the left — exactly how the fingers meet the keys. -->
           <div id="hand-map" class="hand-map hidden" aria-hidden="true">
             <div class="hand" data-hand="L">
-              <svg viewBox="0 0 132 96" class="hand-svg">
+              <svg viewBox="0 0 132 104" class="hand-svg">
                 <g class="hand-outline" transform="scale(-1,1) translate(-132,0)">
-                  <path d="M20 96 V62 q0-9 9-9 t9 9 v-6 l6-30 q2-8 10-6 t6 10 l-4 26 v-4 l4-34 q1-8 9-7 t7 9 l-2 36 v-2 l7-30 q2-8 10-6 t6 10 l-7 32 3-14 q2-7 9-5 t5 9 l-8 34 q-4 18-22 18 z" />
+                  <rect class="palm" x="32" y="50" width="78" height="46" rx="16" />
+                  <rect class="bone" x="38" y="20" width="15" height="36" rx="7.5" />
+                  <rect class="bone" x="56" y="12" width="15" height="44" rx="7.5" />
+                  <rect class="bone" x="74" y="18" width="15" height="38" rx="7.5" />
+                  <rect class="bone" x="92" y="32" width="14" height="24" rx="7" />
+                  <rect class="bone" x="9" y="56" width="15" height="34" rx="7.5" transform="rotate(-32 16.5 73)" />
                 </g>
                 <g class="hand-digits">
-                  <g class="digit" data-finger="5"><circle cx="17" cy="46" r="10" /><text x="17" y="50">5</text></g>
-                  <g class="digit" data-finger="4"><circle cx="41" cy="26" r="10" /><text x="41" y="30">4</text></g>
-                  <g class="digit" data-finger="3"><circle cx="65" cy="18" r="10" /><text x="65" y="22">3</text></g>
-                  <g class="digit" data-finger="2"><circle cx="89" cy="26" r="10" /><text x="89" y="30">2</text></g>
-                  <g class="digit" data-finger="1"><circle cx="114" cy="56" r="10" /><text x="114" y="60">1</text></g>
+                  <g class="digit" data-finger="5"><circle cx="33" cy="42" r="9" /><text x="33" y="46">5</text></g>
+                  <g class="digit" data-finger="4"><circle cx="50.5" cy="30" r="9" /><text x="50.5" y="34">4</text></g>
+                  <g class="digit" data-finger="3"><circle cx="68.5" cy="24" r="9" /><text x="68.5" y="28">3</text></g>
+                  <g class="digit" data-finger="2"><circle cx="86.5" cy="32" r="9" /><text x="86.5" y="36">2</text></g>
+                  <g class="digit" data-finger="1"><circle cx="113" cy="64" r="9" /><text x="113" y="68">1</text></g>
                 </g>
               </svg>
               <em>LEFT</em>
             </div>
             <div class="hand" data-hand="R">
-              <svg viewBox="0 0 132 96" class="hand-svg">
+              <svg viewBox="0 0 132 104" class="hand-svg">
                 <g class="hand-outline">
-                  <path d="M20 96 V62 q0-9 9-9 t9 9 v-6 l6-30 q2-8 10-6 t6 10 l-4 26 v-4 l4-34 q1-8 9-7 t7 9 l-2 36 v-2 l7-30 q2-8 10-6 t6 10 l-7 32 3-14 q2-7 9-5 t5 9 l-8 34 q-4 18-22 18 z" />
+                  <rect class="palm" x="32" y="50" width="78" height="46" rx="16" />
+                  <rect class="bone" x="38" y="20" width="15" height="36" rx="7.5" />
+                  <rect class="bone" x="56" y="12" width="15" height="44" rx="7.5" />
+                  <rect class="bone" x="74" y="18" width="15" height="38" rx="7.5" />
+                  <rect class="bone" x="92" y="32" width="14" height="24" rx="7" />
+                  <rect class="bone" x="9" y="56" width="15" height="34" rx="7.5" transform="rotate(-32 16.5 73)" />
                 </g>
                 <g class="hand-digits">
-                  <g class="digit" data-finger="1"><circle cx="17" cy="56" r="10" /><text x="17" y="60">1</text></g>
-                  <g class="digit" data-finger="2"><circle cx="41" cy="26" r="10" /><text x="41" y="30">2</text></g>
-                  <g class="digit" data-finger="3"><circle cx="65" cy="18" r="10" /><text x="65" y="22">3</text></g>
-                  <g class="digit" data-finger="4"><circle cx="89" cy="26" r="10" /><text x="89" y="30">4</text></g>
-                  <g class="digit" data-finger="5"><circle cx="114" cy="46" r="10" /><text x="114" y="50">5</text></g>
+                  <g class="digit" data-finger="1"><circle cx="19" cy="64" r="9" /><text x="19" y="68">1</text></g>
+                  <g class="digit" data-finger="2"><circle cx="45.5" cy="32" r="9" /><text x="45.5" y="36">2</text></g>
+                  <g class="digit" data-finger="3"><circle cx="63.5" cy="24" r="9" /><text x="63.5" y="28">3</text></g>
+                  <g class="digit" data-finger="4"><circle cx="81.5" cy="30" r="9" /><text x="81.5" y="34">4</text></g>
+                  <g class="digit" data-finger="5"><circle cx="99" cy="42" r="9" /><text x="99" y="46">5</text></g>
                 </g>
               </svg>
               <em>RIGHT</em>
@@ -324,6 +362,31 @@
       </section>
 
     </main>
+
+    <!-- Lesson Accomplishment & Star Celebration Modal (newideas.md #2) -->
+    <section id="celebration-modal" class="celebration-backdrop hidden" aria-label="Lesson completed">
+      <div class="celebration-card">
+        <div class="celebration-badge">⭐ PERFECT TAKE ⭐</div>
+        <div class="star-rating">
+          <span class="star lit">★</span>
+          <span class="star lit">★</span>
+          <span class="star lit">★</span>
+        </div>
+        <h2 id="celebration-title" class="celebration-title font-display">Lesson Mastered!</h2>
+        <p id="celebration-msg" class="celebration-msg">
+          Awesome work! You played every note with accurate timing.
+        </p>
+        <div class="celebration-stats">
+          <div class="stat-pill"><span id="celebration-accuracy">100%</span><em>Accuracy</em></div>
+          <div class="stat-pill"><span id="celebration-hits">8 / 8</span><em>Notes Hit</em></div>
+        </div>
+        <div class="celebration-actions">
+          <button id="celebration-next" class="generate lg" type="button">Next Lesson ➔</button>
+          <button id="celebration-replay" class="ghost-btn" type="button">Play Again ↺</button>
+        </div>
+      </div>
+    </section>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

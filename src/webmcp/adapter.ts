@@ -59,35 +59,36 @@ export const registerTools = async (tools: ToolDefinition[]): Promise<number> =>
 export const listTools = async (): Promise<RegisteredTool[]> => {
   const ctx = getModelContext();
   if (!ctx?.getTools) return [];
-  return ctx.getTools();
-};
-
-export const runTool = async (
-  name: string,
-  input: Record<string, unknown> = {},
-): Promise<unknown> => {
-  const ctx = getModelContext();
-  const tools = await listTools();
-  const tool = tools.find((item) => item.name === name);
-  if (!tool || !ctx?.executeTool) {
-    const local = pendingLocal.get(name);
-    if (local) return local(input);
-    throw new Error(`Tool not available: ${name}`);
+  try {
+    return await ctx.getTools();
+  } catch {
+    // getTools throws SecurityError unless the agent cluster is origin-keyed. Rejecting
+    // here would take every agent step down with it, so report "no native tools" instead.
+    return [];
   }
-  return ctx.executeTool(tool, input);
 };
 
 const pendingLocal = new Map<string, ToolExecute>();
 
-export const rememberLocal = (tools: ToolDefinition[]): void => {
-  tools.forEach((tool) => pendingLocal.set(tool.name, tool.execute));
-};
-
-export const runLocal = async (
+/**
+ * Runs a tool by name. Tools this page registered are called directly: routing our own
+ * agent's calls out through the host and back is a pointless round-trip that fails
+ * whenever the host does. executeTool stays for tools the page does not own, and takes
+ * an object because the spec serializes it for us.
+ */
+export const runTool = async (
   name: string,
   input: Record<string, unknown> = {},
 ): Promise<unknown> => {
-  const execute = pendingLocal.get(name);
-  if (!execute) throw new Error(`Unknown tool: ${name}`);
-  return execute(input);
+  const local = pendingLocal.get(name);
+  if (local) return local(input);
+  const ctx = getModelContext();
+  const tools = await listTools();
+  const tool = tools.find((item) => item.name === name);
+  if (!tool || !ctx?.executeTool) throw new Error(`Tool not available: ${name}`);
+  return ctx.executeTool(tool, input);
+};
+
+export const rememberLocal = (tools: ToolDefinition[]): void => {
+  tools.forEach((tool) => pendingLocal.set(tool.name, tool.execute));
 };

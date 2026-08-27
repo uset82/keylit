@@ -14,21 +14,37 @@ export const FACTORY_SAMPLES = [
 
 const listeners = new Set<() => void>();
 
-export const state: InstrumentState = {
-  ready: false,
-  agentActing: null,
-  lcdPage: "browse",
+/**
+ * The sound the instrument boots with, and the only thing Restore puts back.
+ *
+ * `master` is deliberately not in here. It is the listener's comfort setting, it lives
+ * on the rack face rather than in the STUDIO drawer, and snapping it back under a child
+ * in headphones is not a favour. Nor is `lesson` or `phrase`: pressing Restore mid-song
+ * must not throw the song away.
+ */
+export const FACTORY_SOUND: Pick<
+  InstrumentState,
+  "presetName" | "style" | "bars" | "bpm" | "swing" | "layerA" | "layerB" | "adsr" | "fx"
+> = {
   presetName: "STEINWAY INIT",
   style: "piano",
   bars: 4,
-  master: 0.72,
-  octave: 0,
   bpm: 96,
   swing: 0.04,
   layerA: { sampleId: "pn-ivory", kind: "piano", volume: 0.9, transpose: 0, locked: false },
   layerB: { sampleId: "ok-bloom", kind: "orchestra", volume: 0, transpose: 0, locked: false },
   adsr: { attack: 0.002, decay: 0.42, sustain: 0.72, release: 0.55 },
   fx: { filter: 0.92, distortion: 0, crush: 0, delay: 0.05, reverb: 0.16 },
+};
+
+export const state: InstrumentState = {
+  ready: false,
+  agentActing: null,
+  lcdPage: "browse",
+  // Cloned, or the running state and the factory reference would be the same objects.
+  ...structuredClone(FACTORY_SOUND),
+  master: 0.72,
+  octave: 0,
   heldNotes: [],
   humanHeld: [],
   agentHeld: [],

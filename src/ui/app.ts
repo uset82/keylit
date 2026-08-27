@@ -6,6 +6,7 @@ import {
   getContext,
   initAudio,
   playPhrase,
+  resetSound,
   warmCurrentPatches,
 } from "../engine/audio";
 import { duetLine, nameList, recentTake } from "../engine/duet";
@@ -37,6 +38,7 @@ import {
 } from "../store";
 import type { Hand, LayerId, PhraseNote, PhraseStyle } from "../types";
 import { mountIntro } from "./intro";
+import { mountVoice, primeSpeech } from "./voice";
 import { KEY_COUNT, START_MIDI, isBlack, midiToComputerKey, qwertyToMidi } from "./keyboard";
 
 const messages: AgentMessage[] = [
@@ -188,6 +190,21 @@ const revealKey = (key: HTMLElement | null): void => {
   bed.scrollTo({ left: Math.max(0, Math.min(overflow, centred)), behavior: "smooth" });
 };
 
+let lastLesson: typeof state.lesson = null;
+
+/**
+ * revealKey pans the bed sideways; this brings the bed itself on screen. On a phone the
+ * keys sit roughly 700px below the fold, so tapping a lesson closes the intro and leaves
+ * you staring at the chat bar as if nothing happened. startLesson builds a fresh lesson
+ * object per call, so restarting the same song scrolls again.
+ */
+const revealKeybed = (): void => {
+  if (state.lesson === lastLesson) return;
+  lastLesson = state.lesson;
+  if (!state.lesson) return;
+  keybed()?.scrollIntoView({ behavior: "smooth", block: "end" });
+};
+
 const panKeybed = (direction: 1 | -1): void => {
   const bed = keybed();
   if (!bed) return;
@@ -248,6 +265,8 @@ const renderHands = (): void => {
   });
 };
 
+let celebratedLessonId: string | null = null;
+
 const updateView = (): void => {
   const set = (id: string, text: string) => {
     const el = document.querySelector(id);
@@ -255,6 +274,24 @@ const updateView = (): void => {
   };
   const together = state.humanHeld.length > 0 && state.agentHeld.length > 0;
   const teaching = Boolean(state.lesson) && state.lesson?.lastGrade !== "done";
+
+  // Trigger celebration modal when a lesson/song is successfully completed
+  if (state.lesson && state.lesson.lastGrade === "done" && celebratedLessonId !== state.lesson.id) {
+    celebratedLessonId = state.lesson.id;
+    const modal = document.querySelector<HTMLElement>("#celebration-modal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      const titleEl = document.querySelector("#celebration-title");
+      if (titleEl) titleEl.textContent = `${state.lesson.title} Mastered!`;
+      const hitsEl = document.querySelector("#celebration-hits");
+      if (hitsEl) hitsEl.textContent = `${state.lesson.hits} / ${state.lesson.steps.length}`;
+      const accuracy = Math.round((state.lesson.hits / Math.max(1, state.lesson.hits + state.lesson.misses)) * 100);
+      const accEl = document.querySelector("#celebration-accuracy");
+      if (accEl) accEl.textContent = `${accuracy}%`;
+    }
+  } else if (!state.lesson || state.lesson.lastGrade !== "done") {
+    celebratedLessonId = null;
+  }
   set("#lcd-mode", state.lcdPage === "envelope" ? "ENV" : teaching ? "TEACH" : together || state.duetMode === "follow" ? "DUET" : "EDIT");
   set("#lcd-title", state.agentActing ? `AGENT · ${state.agentActing}` : state.lesson ? state.lesson.title.toUpperCase() : state.presetName);
   set("#lcd-engine", engineLine());
@@ -280,6 +317,11 @@ const updateView = (): void => {
   set("#midi-label", state.midiDevice);
   set("#style-label", state.style);
   set("#bars-label", `${state.bars} BAR`);
+  // The dropdown is the one control updateView does not otherwise own, so anything that
+  // changes style from outside it — Restore, or the agent's set-style — would leave the
+  // menu showing the old name.
+  const styleSelect = document.querySelector<HTMLSelectElement>("#style");
+  if (styleSelect && styleSelect.value !== state.style) styleSelect.value = state.style;
   const env = document.querySelector("#env-path");
   if (env) env.setAttribute("d", adsrPath());
   document.querySelector("#browse-page")?.classList.toggle("hidden", state.lcdPage !== "browse");
@@ -330,6 +372,7 @@ const updateView = (): void => {
     if (next && !firstNextKey) firstNextKey = key;
   });
   revealKey(firstNextKey);
+  revealKeybed();
   renderHands();
   renderRoll();
 };
@@ -428,10 +471,14 @@ const drawMeterColumn = (
 
 const armEverything = (): void => {
   void ensureAudio().then(() => connectMidi());
+  // Covers the visitor who left the voice on last time: iOS only accepts a first
+  // utterance from a gesture, and this is the gesture.
+  primeSpeech();
 };
 
 export const mountApp = (): void => {
   mountIntro(armEverything);
+  mountVoice();
   renderKeys();
   renderMessages();
   updateView();
@@ -464,6 +511,9 @@ export const mountApp = (): void => {
     window.setTimeout(() => {
       downloadBytes(writeMidiFile(state.phrase, state.bpm), "keybed-phrase.mid", "audio/midi");
     }, 40);
+  });
+  document.querySelector("#restore")?.addEventListener("click", () => {
+    void resetSound();
   });
   document.querySelector("#style")?.addEventListener("change", (event) => {
     const value = (event.target as HTMLSelectElement).value as PhraseStyle;
@@ -528,6 +578,44 @@ export const mountApp = (): void => {
       if (field) field.value = button.dataset.recipe ?? "";
       void handleAgent();
     });
+  });
+
+  const celebrationModal = document.querySelector<HTMLElement>("#celebration-modal");
+  document.querySelector("#celebration-replay")?.addEventListener("click", () => {
+    celebrationModal?.classList.add("hidden");
+    const field = document.querySelector<HTMLInputElement>("#agent-input");
+    if (field && state.lesson) {
+      field.value = state.lesson.title;
+      void handleAgent();
+    }
+  });
+
+  document.querySelector("#celebration-next")?.addEventListener("click", () => {
+    celebrationModal?.classList.add("hidden");
+    const recipes = [
+      "teach me",
+      "first keys",
+      "finger numbers",
+      "left hand",
+      "both hands",
+      "C scale",
+      "C chord",
+      "Twinkle",
+      "Ode to Joy",
+      "Happy Birthday",
+    ];
+    const currentTitle = state.lesson?.title.toLowerCase() || "";
+    const idx = recipes.findIndex((r) => currentTitle.includes(r.toLowerCase()));
+    const nextRecipe = idx >= 0 && idx < recipes.length - 1 ? recipes[idx + 1] : "Twinkle";
+    const field = document.querySelector<HTMLInputElement>("#agent-input");
+    if (field) {
+      field.value = nextRecipe;
+      void handleAgent();
+    }
+  });
+
+  celebrationModal?.addEventListener("click", (e) => {
+    if (e.target === celebrationModal) celebrationModal.classList.add("hidden");
   });
 
   const piano = document.querySelector<HTMLElement>("#piano");

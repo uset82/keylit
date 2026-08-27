@@ -18,6 +18,10 @@ export default {
     const headers = new Headers({
       "cache-control": pathname === "/index.html" ? "no-cache" : "public, max-age=31536000, immutable",
       "content-type": asset.contentType,
+      // WebMCP rejects registerTool/getTools/executeTool with SecurityError unless the
+      // agent cluster is origin-keyed, so without this the page exposes no tools at all.
+      "origin-agent-cluster": "?1",
+      "permissions-policy": "tools=(self)",
     });
     const body = request.method === "HEAD" ? null : decodeBase64(asset.body);
     return new Response(body, { headers });

@@ -1,4 +1,4 @@
-import { runLocal, runTool } from "../webmcp/adapter";
+import { runTool } from "../webmcp/adapter";
 
 export type AgentMessage = {
   role: "user" | "agent";
@@ -16,6 +16,13 @@ const RECIPES: Recipe[] = [
     match: /stop (the )?lesson|stop teach|end lesson/,
     steps: [{ tool: "stop-lesson" }],
     say: "Lesson off. The keys are yours.",
+  },
+  {
+    // The crush/warm recipes below had no way home. Kept narrow so "reset the lesson"
+    // still belongs to the lesson controls above.
+    match: /put it back|back to normal|sounds? (bad|weird|broken)|factory|reset( the)? (sound|effects|fx|knobs)|^reset$|undo the/,
+    steps: [{ tool: "reset-sound" }],
+    say: "Putting the sound back to normal.",
   },
   {
     match: /show next|what next|next keys|hint|which key/,
@@ -235,7 +242,9 @@ const formatResult = (value: unknown): string => {
 };
 
 const runStep = async (tool: string, input: Record<string, unknown> = {}): Promise<string> => {
-  const result = await runTool(tool, input).catch(() => runLocal(tool, input));
+  // No local fallback here: runTool already prefers this page's own implementation, and
+  // retrying a tool that threw halfway would run its side effects twice.
+  const result = await runTool(tool, input);
   return formatResult(result);
 };
 

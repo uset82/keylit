@@ -41,6 +41,7 @@ export const mountIntro = (arm: () => void): void => {
   if (readSeen()) intro.classList.add("hidden");
 
   document.querySelector("#intro-start")?.addEventListener("click", close);
+  document.querySelector("#intro-close-btn")?.addEventListener("click", close);
   // Picking a lesson counts as starting: the [data-recipe] handler in app.ts
   // still fires and runs the agent turn, so the lesson is already loading.
   intro.querySelectorAll<HTMLElement>("[data-recipe]").forEach((tile) => {

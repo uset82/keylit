@@ -1,4 +1,4 @@
-import { state, patchState } from "../store";
+import { FACTORY_SOUND, state, patchState } from "../store";
 import type { LayerState, PhraseNote } from "../types";
 import {
   applySustainToRompler,
@@ -381,3 +381,16 @@ export const playPhrase = (phrase: PhraseNote[]): void => {
 };
 
 export const getContext = (): AudioContext | null => context;
+
+/**
+ * Put the instrument back to the sound it booted with. Cloned so the running state never
+ * shares objects with FACTORY_SOUND. ADSR needs no call of its own — it is read per note,
+ * so the next key pressed already uses it.
+ */
+export const resetSound = async (): Promise<void> => {
+  patchState(structuredClone(FACTORY_SOUND));
+  applyFx();
+  applyMaster();
+  await initAudio();
+  await warmCurrentPatches();
+};

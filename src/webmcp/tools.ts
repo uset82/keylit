@@ -5,6 +5,7 @@ import {
   initAudio,
   noteOff,
   playPhrase,
+  resetSound,
   setSustain,
   warmCurrentPatches,
 } from "../engine/audio";
@@ -474,6 +475,17 @@ export const instrumentTools = (): ToolDefinition[] => [
         await initAudio();
         await warmCurrentPatches();
         return textResult(`Loaded ${parsed.presetName}`);
+      }),
+  },
+  {
+    name: "reset-sound",
+    description:
+      "Put the instrument back to its factory sound: Steinway, clean effects, default envelope. Keeps the running lesson and the master volume.",
+    inputSchema: { type: "object", properties: {} },
+    execute: () =>
+      withAgent("reset-sound", async () => {
+        await resetSound();
+        return textResult("Back to the factory sound. Steinway, effects clean. Your lesson is still running.");
       }),
   },
   {
