@@ -17,7 +17,16 @@ const MODELS = ["thinkingmachines/inkling:free", "openrouter/free"];
 const MAX_DESCRIPTION = 400;
 const MAX_SHEET_LINES = 12;
 const MAX_SHEET_LINE = 200;
-const UPSTREAM_TIMEOUT_MS = 12000;
+/*
+ * Must stay under the page's own abort budget. At 12s per model across two
+ * models this could spend 24 seconds on a request the browser abandoned after
+ * three, so the second attempt was never once seen by a user — it only kept an
+ * upstream connection warm for nobody.
+ */
+const UPSTREAM_TIMEOUT_MS = 3000;
+
+/** Only try a second model if the first failed fast rather than timed out. */
+const SECOND_MODEL_BUDGET_MS = 1200;
 
 /**
  * Per-IP sliding window.
@@ -150,6 +159,7 @@ export const designReply = async ({ description, sheet, apiKey, ip, fetchImpl })
   }
 
   const sampleSheet = cleanSheet(sheet);
+  const startedAt = Date.now();
   for (const model of MODELS) {
     const parsed = await callModel(model, text, sampleSheet, apiKey, fetchImpl);
     // The page clamps every field again before it touches the audio graph, so
@@ -160,6 +170,9 @@ export const designReply = async ({ description, sheet, apiKey, ip, fetchImpl })
         json: { reply: String(parsed.reply ?? ""), patch: parsed.patch ?? null, phrase: parsed.phrase ?? null, model },
       };
     }
+    // Answering "no" quickly is worth more than a second attempt nobody waits
+    // for: the page has an offline mapper ready the moment this returns.
+    if (Date.now() - startedAt > SECOND_MODEL_BUDGET_MS) break;
   }
   return { status: 502, json: { error: "no-usable-reply" } };
 };

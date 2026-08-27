@@ -1384,6 +1384,30 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 .bubble.user  { background: #1e2225; border-color: #2b3034; }
 .bubble.agent { background: #182016; border-color: rgba(157,255,106,.22); }
 
+.bubble.pending { color: var(--label-dim); }
+
+.bubble.pending i {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin-left: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: bubble-dot 1.05s ease-in-out infinite;
+}
+
+.bubble.pending i:nth-of-type(2) { animation-delay: .18s; }
+.bubble.pending i:nth-of-type(3) { animation-delay: .36s; }
+
+@keyframes bubble-dot {
+  0%, 60%, 100% { opacity: .25; }
+  30%           { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble.pending i { animation: none; opacity: .6; }
+}
+
 .agent-input {
   flex: 1;
   min-width: 0;

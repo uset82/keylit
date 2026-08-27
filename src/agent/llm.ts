@@ -10,14 +10,38 @@ import { clampGeneratedPhrase, type GeneratedPhrase } from "../engine/generated-
  * nothing else. Every error path therefore returns null rather than throwing.
  */
 
-const TIMEOUT_MS = 6000;
+/**
+ * Short on purpose. This is a child waiting for an answer with nothing else
+ * happening on screen, so the budget is set by their patience, not by how long
+ * a model might plausibly take. A slow model is simply a model we do not use.
+ */
+const TIMEOUT_MS = 3500;
 
 /**
  * Once the endpoint has told us it has no key, stop asking. Without this every
- * unmatched message on the Vercel deploy (where no key is set) would spend six
- * seconds waiting to be told the same thing again.
+ * unmatched message on the Vercel deploy (where no key is set) would spend the
+ * full timeout waiting to be told the same thing again.
  */
 let unavailable = false;
+
+/**
+ * Same idea, for a proxy that is reachable but broken — a dead upstream, an
+ * exhausted key, a provider outage. "Fall through silently" was only ever
+ * honest when failure was rare; when the proxy fails every single time, silent
+ * became a timeout-long stare before every reply, which reads as a hung app.
+ *
+ * So: pay the wait twice, then stop paying it. Latched for the session rather
+ * than on a timer, because a page that is fast and slightly stale beats one
+ * that randomly goes slow again ten minutes later.
+ */
+const MAX_FAILURES = 2;
+let failures = 0;
+
+const noteFailure = (): null => {
+  failures += 1;
+  if (failures >= MAX_FAILURES) unavailable = true;
+  return null;
+};
 
 export type DesignResult = { patch: SoundPatch | null; phrase: GeneratedPhrase | null; reply: string };
 
@@ -45,7 +69,7 @@ export const designViaLlm = async (description: string): Promise<DesignResult | 
       unavailable = true;
       return null;
     }
-    if (!response.ok) return null;
+    if (!response.ok) return noteFailure();
 
     const data = (await response.json()) as { reply?: unknown; patch?: unknown; phrase?: unknown };
     // Clamped here rather than trusted: the server only checked the shape was
@@ -53,14 +77,17 @@ export const designViaLlm = async (description: string): Promise<DesignResult | 
     // phrase sequencer.
     const patch = clampPatch(data.patch);
     const phrase = clampGeneratedPhrase(data.phrase);
-    if (!patch && !phrase) return null;
+    // A 200 carrying nothing usable is still a failure of this tier, and one
+    // that repeats: a model that cannot hold the schema will not learn to.
+    if (!patch && !phrase) return noteFailure();
 
+    failures = 0;
     const reply = typeof data.reply === "string" && data.reply.trim() ? data.reply.trim() : "";
     return { patch, phrase, reply };
   } catch {
     // Aborted, offline, blocked by CSP, served by a host with no /api route —
     // all the same outcome as far as the caller is concerned.
-    return null;
+    return noteFailure();
   } finally {
     window.clearTimeout(timer);
   }

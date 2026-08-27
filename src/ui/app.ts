@@ -305,12 +305,35 @@ const syncPanButtons = (): void => {
   bed.classList.toggle("can-pan-right", !idle && bed.scrollLeft < bedOverflow(bed) - 2);
 };
 
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+/**
+ * Replies used to be our own fixed strings, so dropping them into innerHTML was
+ * harmless. They can now come from a language model, and a reply carrying
+ * `<img onerror=...>` would run on this page — with the audio graph, the saved
+ * presets and localStorage in reach. Model output is untrusted text, so it is
+ * escaped like any other.
+ */
+const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
+
+/** Set while a turn is in flight, so the wait shows something other than nothing. */
+let agentPending = false;
+
 const renderMessages = (): void => {
   const log = document.querySelector("#agent-log");
   if (!log) return;
-  log.innerHTML = messages
-    .map((message) => `<p class="bubble ${message.role}"><span>${message.role}</span>${message.text}</p>`)
+  const bubbles = messages
+    .map((message) => `<p class="bubble ${message.role}"><span>${message.role}</span>${escapeHtml(message.text)}</p>`)
     .join("");
+  log.innerHTML = agentPending
+    ? `${bubbles}<p class="bubble agent pending"><span>agent</span>Thinking<i></i><i></i><i></i></p>`
+    : bubbles;
   log.scrollTop = log.scrollHeight;
 };
 
@@ -555,10 +578,19 @@ const handleAgent = async (): Promise<void> => {
   if (!text) return;
   if (field) field.value = "";
   messages.push({ role: "user", text });
+  agentPending = true;
   renderMessages();
   await ensureAudio();
-  const reply = await runAgentTurn(text);
-  messages.push({ role: "agent", text: reply });
+  try {
+    const reply = await runAgentTurn(text);
+    messages.push({ role: "agent", text: reply });
+  } catch (error) {
+    // A turn that throws used to leave the transcript stuck on the user's own
+    // message with no explanation, which is indistinguishable from a dead app.
+    messages.push({ role: "agent", text: `That one broke: ${error instanceof Error ? error.message : "error"}` });
+  } finally {
+    agentPending = false;
+  }
   renderMessages();
 };
 

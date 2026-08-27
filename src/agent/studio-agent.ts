@@ -256,7 +256,10 @@ const RECIPES: Recipe[] = [
     say: "C major from me. Hold yours and ask me to harmonize.",
   },
   {
-    match: /export|midi|download/,
+    // Needs an export verb rather than the bare word "midi", which used to make
+    // this recipe swallow "write me a midi riff" and download a stale phrase
+    // instead of composing anything.
+    match: /\b(export|download|save)\b/,
     steps: [{ tool: "export-midi" }],
     say: "MIDI download started if a phrase exists.",
   },
@@ -423,12 +426,15 @@ const designFromWords = async (prompt: string): Promise<string> => {
 export const runAgentTurn = async (prompt: string): Promise<string> => {
   const text = prompt.trim().toLowerCase();
   if (wantsInstrumentalTrack(prompt)) return instrumentalFromWords(prompt);
-  // A custom MIDI request must reach the model before the legacy `midi` export
-  // recipe below sees the word and downloads an unrelated existing phrase.
-  if (wantsCustomMidi(prompt)) return designFromWords(prompt.trim());
-  // Recipes stay first and unchanged. They are instant and offline, and they own
-  // every lesson trigger — a child asking for "twinkle" must never wait on a
-  // network call, nor risk a model reinterpreting it as a request for a timbre.
+  // Recipes stay first. They are instant and offline, and they own every lesson
+  // trigger — a child asking for "twinkle" must never wait on a network call,
+  // nor risk a model reinterpreting it as a request for a timbre.
+  //
+  // MIDI creation used to be tested above this, to dodge the export recipe
+  // catching the word "midi". That also handed the DJ chips to the model:
+  // "make me a rave loop" reads as create + loop, so a one-tap offline preset
+  // became a round trip that changed the instrument as a side effect. The
+  // export recipe is narrow now, so ordering alone resolves it.
   const recipe = RECIPES.find((item) => item.match.test(text));
   if (!recipe) return designFromWords(prompt.trim());
   const lines: string[] = [recipe.say];
