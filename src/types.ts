@@ -25,6 +25,7 @@ export type LessonId =
   | "hot-cross-buns"
   | "mary-lamb"
   | "twinkle"
+  | "birthday-basic"
   // Intermediate — both hands, metronome.
   | "ode"
   | "birthday"
