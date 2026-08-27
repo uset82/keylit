@@ -1100,39 +1100,21 @@ select.mini {
   box-shadow: 0 0 8px rgba(231,195,106,.7);
 }
 
-/* ---------- page head ---------- */
+/* ---------- rack status ---------- */
 
-.page-head {
-  position: relative;
-  z-index: 10;
+/* Engraved-panel lettering beside the arm button: quiet enough to ignore until
+   a cable is plugged in, legible when it matters. */
+.rack-status {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 10px 24px 8px;
-}
-
-.page-head-name { display: flex; align-items: baseline; gap: 14px; }
-
-.page-head-sub {
+  flex-direction: column;
+  gap: 2px;
   font-size: 10px;
-  letter-spacing: .26em;
-  text-transform: uppercase;
-  color: var(--label-dim);
-}
-
-.page-head-status {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px 16px;
-  font-size: 10px;
-  letter-spacing: .18em;
+  letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--label-dim);
   text-align: right;
+  /* One line each. Wrapping here reflows the arm button beside it. */
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -1152,6 +1134,7 @@ select.mini {
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas:
+    "head  head"
     "line  form"
     "chips chips"
     "music music"
@@ -1171,6 +1154,25 @@ select.mini {
     0 12px 34px rgba(0,0,0,.45);
 }
 
+/* The panel's title bar: identity on the left, the two doors that change what
+   the whole panel does on the right. */
+.chat-head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.chat-head-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
 .chat-line {
   grid-area: line;
   display: flex;
@@ -1179,6 +1181,9 @@ select.mini {
   gap: 6px 12px;
   min-width: 0;
 }
+
+/* Nothing played yet means "Last take —", which reads like a broken field. */
+.chat-take.is-empty { display: none; }
 
 .chat-pill {
   padding: 3px 8px;
@@ -1861,9 +1866,6 @@ body[data-mode="teach"] .dj-only { display: none !important; }
     padding: 0 24px;
   }
 
-  /* Match the wider stage, or the header floats short of the content. */
-  .page-head { max-width: 1760px; }
-
   /* Placed explicitly, against source order: the instrument holds column one
      while the teacher, which comes first in the DOM, sits to its right. */
   /* margin:0 matters as much as the width here. Both columns centre themselves
@@ -1909,6 +1911,35 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 
   .chat-form { width: 100%; }
 
+  /* Read top to bottom: who is talking, what to play now, the conversation so
+     far, then the things you can say. The DOM order serves a stacked phone,
+     where the composer has to sit directly under the coach line; a column has
+     room to follow the chat convention of composing at the bottom instead. */
+  .chat-head { order: 0; }
+  .chat-line { order: 1; }
+  .chat-transcript { order: 2; }
+  .music-result { order: 3; }
+  .chat-chips { order: 4; }
+  .chat-form { order: 5; }
+
+  /* Wraps to two rows in a column this narrow, and an auto margin on the second
+     row would strand the tools against the right edge on a line of their own. */
+  .chat-head-tools { margin-left: 0; }
+
+  /* The one line that changes every time you play a note, so it gets the card
+     and the cyan edge — the same cyan that means "play this next" on the keys. */
+  .chat-line {
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--chassis-edge);
+    border-left: 2px solid rgba(var(--next), .75);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(0,0,0,.16));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+
+  .chat-coach { min-width: 0; font-size: 13px; }
+
   /* The whole point of the column: the transcript takes every row the rows
      above it did not claim, and scrolls inside itself rather than pushing the
      panel open.
@@ -1922,13 +1953,37 @@ body[data-mode="teach"] .dj-only { display: none !important; }
     flex: 1;
     min-height: 0;
     overflow: auto;
+    padding: 0 10px 8px;
+    border: 1px solid rgba(0,0,0,.5);
+    border-radius: 10px;
+    background: var(--well);
+    box-shadow: inset 0 2px 7px rgba(0,0,0,.55);
   }
 
-  .chat-transcript summary { margin-bottom: 8px; }
+  /* Pinned to the top of the well it labels, with the well's own background
+     behind it and negative side margins so bubbles scroll under it edge to
+     edge instead of past its corners. width:auto against the max-content
+     default, or the background masks only the label and bubbles show through
+     beside it. */
+  .chat-transcript summary {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    width: auto;
+    margin: 0 -10px 2px;
+    padding: 8px 10px 6px;
+    background: var(--well);
+  }
 
   /* The 220px cap is there to stop a stacked transcript eating the keybed.
      Nothing to protect here: the panel already bounds it. */
   .agent-log { max-height: none; }
+
+  /* Quieter and denser than the conversation they sit under. Cutting the
+     tracking buys more per row than the padding does — it is what makes these
+     strings wide in the first place. */
+  .chat-chips { gap: 4px; }
+  .chat-chips .chip { padding: 4px 8px; letter-spacing: .06em; }
 
   /* Three columns do not fit in 288px, so the player takes a row of its own. */
   .music-result { grid-template-columns: minmax(0, 1fr) auto; }
@@ -1946,13 +2001,12 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 
   :root { --keybed-h: 176px; }
   .strip-row { grid-template-columns: 1fr; gap: 0; }
-  .page-head { padding: 12px 16px 8px; }
-  .page-head-sub { display: none; }
   .chat-bar-wrap { padding: 0 16px 12px; }
 
   .chat-bar {
     grid-template-columns: 1fr;
     grid-template-areas:
+      "head"
       "line"
       "form"
       "chips"
@@ -2076,13 +2130,6 @@ body[data-mode="teach"] .dj-only { display: none !important; }
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
-  .page-head {
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    padding-left: max(14px, env(safe-area-inset-left));
-    padding-right: max(14px, env(safe-area-inset-right));
-  }
-
   .chat-bar-wrap {
     padding-left: max(12px, env(safe-area-inset-left));
     padding-right: max(12px, env(safe-area-inset-right));
@@ -2127,9 +2174,16 @@ body[data-mode="teach"] .dj-only { display: none !important; }
      Everything hidden here is either duplicated elsewhere or is studio
      furniture a first-time player does not need. */
 
-  /* The chat bar already says who is talking; the page header is a second
-     wordmark plus MIDI/sustain readouts that mean nothing to a beginner. */
-  .page-head { display: none; }
+  /* WebMCP, MIDI and sustain readouts mean nothing to a beginner, and a phone
+     has no USB port to plug a controller into anyway. */
+  .rack-status { display: none; }
+
+  /* Horizontal room is the scarce one here: let the head scroll sideways rather
+     than wrap to three rows, and drop the label the panel does not need — the
+     agent bubbles below it already say who is talking. */
+  .chat-head { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .chat-head::-webkit-scrollbar { display: none; }
+  .chat-head .chat-pill { display: none; }
 
   /* Third wordmark, inside the rack. The chassis is identifiable without it. */
   .rack-face > .flex > .logo-plaque { display: none; }
@@ -2190,7 +2244,11 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 @media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
   :root { --keybed-h: min(46vh, 172px); --white-w: 52px; --notefall-h: 44px; }
 
-  .page-head,
+  /* .chat-head goes with .chat-chips, which is where the mode switch and the
+     two voice toggles used to live: hidden here already, and landscape height
+     is the one budget the keys always win. The rack status rides along inside
+     .rack-face > .flex below. */
+  .chat-head,
   .chat-chips,
   .chat-transcript,
   .studio,

@@ -436,7 +436,10 @@ const updateView = (): void => {
   set("#lcd-layer-b", `B ${sampleLabel(state.layerB.sampleId)}  ${state.layerB.transpose >= 0 ? "+" : ""}${state.layerB.transpose}  ${state.layerB.locked ? "LOCK" : "OPEN"}`);
   set("#you-notes", nameList(state.humanHeld));
   set("#agent-notes", nameList(state.agentHeld));
-  set("#take-notes", nameList(recentTake().map((event) => event.midi)));
+  const take = recentTake();
+  set("#take-notes", nameList(take.map((event) => event.midi)));
+  // "Last take —" before anyone has played reads as a field that failed to fill.
+  document.querySelector(".chat-take")?.classList.toggle("is-empty", take.length === 0);
   const step = currentStep();
   const targets = nextMidi();
   const landmarks = landmarkPitchClasses();

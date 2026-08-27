@@ -198,18 +198,6 @@
       </div>
     </section>
 
-    <header class="page-head">
-      <div class="page-head-name">
-        <h1 class="font-display text-3xl leading-none tracking-wide">KEYLIT</h1>
-        <p class="page-head-sub">The next key is already glowing</p>
-      </div>
-      <div class="page-head-status">
-        <p id="webmcp-status">WebMCP booting…</p>
-        <p id="midi-label">MIDI · None</p>
-        <p id="pedal-label">SUSTAIN · UP</p>
-      </div>
-    </header>
-
     <!-- The teacher comes before the instrument in source order, so a phone reads
          "here is what to play next" above the keys and a screen reader reaches it
          first. On a wide screen .stage places it in a column to the right instead,
@@ -217,8 +205,24 @@
     <div class="stage">
     <div class="chat-bar-wrap">
       <section class="chat-bar" aria-label="Piano teacher">
-        <div class="chat-line">
+        <!-- Standing controls: who is talking, which mode, and the three doors
+             out of the conversation. Kept apart from .chat-chips below, which is
+             a menu of one-off things to say — mixing the two made every control
+             look equally weighted and equally disposable. -->
+        <div class="chat-head">
           <p class="chat-pill">TEACHER</p>
+          <div class="mode-switch" role="group" aria-label="App mode">
+            <button class="chip" data-mode-pick="teach" type="button" aria-pressed="true">teach</button>
+            <button class="chip" data-mode-pick="dj" type="button" aria-pressed="false">DJ</button>
+          </div>
+          <div class="chat-head-tools">
+            <button id="voice-mic" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Talk to the teacher">talk</button>
+            <button id="voice-speak" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Teacher reads each step aloud">hear me</button>
+            <button class="ghost-btn songs-btn" data-intro-open type="button" aria-label="Songs and lessons">Songs</button>
+          </div>
+        </div>
+
+        <div class="chat-line">
           <p id="lesson-coach" class="chat-coach">Press teach me. I will show you where C is first.</p>
           <p class="chat-take">Last take <span id="take-notes">—</span></p>
           <button id="quit-lesson" class="quit-chip hidden" data-recipe="stop lesson" type="button">✕ Quit lesson</button>
@@ -227,16 +231,9 @@
         <form id="agent-form" class="chat-form">
           <input id="agent-input" class="agent-input" placeholder="Teach me, design a sound, or create MIDI…" aria-label="Ask the teacher, design a sound, or create a MIDI phrase" />
           <button class="generate sm" type="submit">Go</button>
-          <button class="ghost-btn songs-btn" data-intro-open type="button" aria-label="Songs and lessons">Songs</button>
         </form>
 
         <div class="chat-chips">
-          <div class="mode-switch" role="group" aria-label="App mode">
-            <button class="chip" data-mode-pick="teach" type="button" aria-pressed="true">teach</button>
-            <button class="chip" data-mode-pick="dj" type="button" aria-pressed="false">DJ</button>
-          </div>
-          <button id="voice-mic" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Talk to the teacher">talk</button>
-          <button id="voice-speak" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Teacher reads each step aloud">hear me</button>
           <button id="next-chip" class="chip teach-only" data-recipe="show next" type="button">show next</button>
           <button class="chip teach-only" data-recipe="hear it" type="button">hear it</button>
           <button class="chip teach-only" data-recipe="slow it down" type="button">slow it down</button>
@@ -278,6 +275,15 @@
           <div class="flex items-start justify-between gap-4">
             <p class="logo-plaque font-display text-3xl tracking-[0.2em]"><span>KEYLIT</span></p>
             <div class="flex items-center gap-4">
+              <!-- Reads out what the button beside it did. These used to sit in a
+                   page header that was mostly a second KEYLIT wordmark; the status
+                   was the only part worth keeping, and it belongs next to the
+                   control that changes it. -->
+              <div class="rack-status">
+                <p id="webmcp-status">WebMCP booting…</p>
+                <p id="midi-label">MIDI · None</p>
+                <p id="pedal-label">SUSTAIN · UP</p>
+              </div>
               <button id="arm" class="ghost-btn" type="button">Arm audio + MIDI</button>
               <div class="power-wrap">
                 <em>POWER</em>
