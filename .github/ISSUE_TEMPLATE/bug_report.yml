@@ -1,0 +1,60 @@
+name: Something is broken
+description: A lesson misbehaves, a key does not sound, the layout is wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If it is about **sound on an iPhone**, please check the
+        side switch first — iOS mutes web audio when the ringer switch is set to silent,
+        and we work around that, but it is worth ruling out.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce it
+      placeholder: |
+        1. Open the site
+        2. Tap "Find any C"
+        3. Press the glowing key
+        4. …
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 13 Pro, iOS 18, Safari — or Windows 11, Chrome 141
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part
+      options:
+        - Sound / audio
+        - A lesson or its instructions
+        - The keyboard itself
+        - Layout on a phone or tablet
+        - The welcome screen
+        - The agent / chat
+        - MIDI keyboard
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: A screenshot helps enormously, especially for layout problems.

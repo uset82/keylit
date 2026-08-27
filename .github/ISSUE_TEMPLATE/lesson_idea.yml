@@ -1,0 +1,54 @@
+name: Suggest a lesson or a song
+description: A tune to teach, or a skill the tutor should cover
+labels: ["lesson"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        You do not need to know how to code to suggest one — describing it well
+        *is* the hard part. If you would rather just chat about it, use
+        [Discussions](https://github.com/uset82/keylit/discussions) instead.
+
+  - type: input
+    id: name
+    attributes:
+      label: What should it teach
+      placeholder: Ode to Joy — or "how to cross the thumb under"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: level
+    attributes:
+      label: Roughly what level
+      options:
+        - First steps — has never touched a piano
+        - Basic — right hand, five fingers, no clock
+        - Intermediate — both hands
+        - Advanced — at tempo, or black keys
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this one
+      description: What makes it a good thing to learn at that point?
+      placeholder: It is the first song most children recognise, and it never leaves the five-finger position.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: The notes, if you know them
+      description: Letters are fine — C D E, or "C C G G A A G". Do not worry about being exact.
+
+  - type: textarea
+    id: copyright
+    attributes:
+      label: Is it out of copyright
+      description: >
+        We can only ship public-domain tunes. Traditional songs and classical
+        pieces are usually fine; anything written in the last century usually is not.
+        Say what you know and we will check.
