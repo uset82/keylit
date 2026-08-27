@@ -249,13 +249,22 @@ const revealKey = (key: HTMLElement | null): void => {
     revealedMidi = -1;
     return;
   }
-  const midi = Number(key.dataset.midi);
-  if (midi === revealedMidi) return;
   const bed = keybed();
   if (!bed) return;
-  revealedMidi = midi;
   const overflow = bedOverflow(bed);
+  // Checked before the target is recorded: a bed that fits has nothing to pan,
+  // and marking the key revealed anyway would suppress the pan it needs the
+  // moment the window shrinks.
   if (overflow <= 1) return;
+  const midi = Number(key.dataset.midi);
+  const offset = key.offsetLeft - bed.scrollLeft;
+  const onScreen = offset >= 0 && offset + key.offsetWidth <= bed.clientWidth;
+  // Re-centre on a new target, and on the old one whenever it has drifted out of
+  // the window — replaying a song whose first note was the last one revealed, or
+  // panning away by hand, otherwise leaves the answer off screen with nothing to
+  // bring it back. At Advanced there is no glow either, so the app looks dead.
+  if (midi === revealedMidi && onScreen) return;
+  revealedMidi = midi;
   const centred = key.offsetLeft + key.offsetWidth / 2 - bed.clientWidth / 2;
   bed.scrollTo({ left: Math.max(0, Math.min(overflow, centred)), behavior: "smooth" });
 };
@@ -459,6 +468,12 @@ const updateView = (): void => {
       dial.parentElement?.style.setProperty("--val", String(value));
     }
   });
+  // Draw only the octaves this lesson needs — a no-op unless the range changed.
+  //
+  // Must come before anything below reads or pans the keys: it replaces every key
+  // element, which resets the bed's scroll position, so panning first meant a
+  // lesson start scrolled to its target and was immediately yanked back to zero.
+  renderKeys();
   let firstNextKey: HTMLElement | null = null;
   const help = scaffold();
   document.querySelectorAll<HTMLElement>(".key").forEach((key) => {
@@ -480,8 +495,6 @@ const updateView = (): void => {
   });
   revealKey(firstNextKey);
   revealKeybed();
-  // Draw only the octaves this lesson needs — no-op unless the range changed.
-  renderKeys();
   renderHands();
   renderNotefall();
   renderRoll();
