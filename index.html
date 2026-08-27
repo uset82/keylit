@@ -42,11 +42,26 @@
           </ul>
         </div>
 
-        <div class="intro-pick">
+        <div class="mode-pick" role="group" aria-label="Choose a mode">
+          <button class="mode-card" data-mode-pick="teach" type="button" aria-pressed="true">
+            <span class="mode-card-led"></span>
+            <em>TEACHING MODE</em>
+            <strong>Learn to play</strong>
+            <span>Nine songs and six warm-ups, basic to advanced. I light the next key and listen.</span>
+          </button>
+          <button class="mode-card dj" data-mode-pick="dj" type="button" aria-pressed="false">
+            <span class="mode-card-led"></span>
+            <em>DJ MODE</em>
+            <strong>Make a track</strong>
+            <span>Styles, FX knobs, generated loops, MIDI export. No lessons in the way.</span>
+          </button>
+        </div>
+
+        <div class="intro-pick teach-only">
           <div class="console-bank">
             <div class="bank-header">
-              <p class="intro-kicker"><span>BANK A</span> // FUNDAMENTALS</p>
-              <span class="bank-count">5 PRESETS</span>
+              <p class="intro-kicker"><span>FIRST STEPS</span> // FIND THE KEYS</p>
+              <span class="bank-count">6 DRILLS</span>
             </div>
             <div class="intro-grid">
               <button class="lesson-tile" data-recipe="teach me" type="button">
@@ -74,41 +89,101 @@
                 <em>Both hands</em>
                 <span>Low C and middle C together.</span>
               </button>
-            </div>
-          </div>
-
-          <div class="console-bank mt-5">
-            <div class="bank-header">
-              <p class="intro-kicker"><span>BANK B</span> // REPERTOIRE</p>
-              <span class="bank-count">5 TRACKS</span>
-            </div>
-            <div class="intro-grid">
-              <button class="lesson-tile" data-recipe="C scale" type="button">
-                <div class="tile-bar"><span class="tile-num">06</span><span class="tile-led amber"></span></div>
-                <em>C major scale</em>
-                <span>Eight keys, no black ones.</span>
-              </button>
               <button class="lesson-tile" data-recipe="C chord" type="button">
-                <div class="tile-bar"><span class="tile-num">07</span><span class="tile-led amber"></span></div>
+                <div class="tile-bar"><span class="tile-num">06</span><span class="tile-led cyan"></span></div>
                 <em>C major chord</em>
                 <span>C, E, G — then hold all three.</span>
               </button>
+            </div>
+          </div>
+
+          <div class="console-bank mt-5" data-tier="basic">
+            <div class="bank-header">
+              <p class="intro-kicker"><span>TIER 1</span> // BASIC</p>
+              <span class="bank-count">RIGHT HAND · NO CLOCK</span>
+            </div>
+            <div class="intro-grid">
+              <button class="lesson-tile" data-recipe="hot cross buns" type="button">
+                <div class="tile-bar"><span class="tile-num">07</span><span class="tile-led cyan"></span></div>
+                <em>Hot Cross Buns</em>
+                <span>Three keys, three fingers. Everyone's first song.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="mary had a little lamb" type="button">
+                <div class="tile-bar"><span class="tile-num">08</span><span class="tile-led cyan"></span></div>
+                <em>Mary Had a Little Lamb</em>
+                <span>Adds G, so all five fingers get a turn.</span>
+              </button>
               <button class="lesson-tile" data-recipe="Twinkle" type="button">
-                <div class="tile-bar"><span class="tile-num">08</span><span class="tile-led amber"></span></div>
+                <div class="tile-bar"><span class="tile-num">09</span><span class="tile-led cyan"></span></div>
                 <em>Twinkle Twinkle</em>
-                <span>The tune everybody knows.</span>
-              </button>
-              <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
-                <div class="tile-bar"><span class="tile-num">09</span><span class="tile-led amber"></span></div>
-                <em>Ode to Joy</em>
-                <span>Beethoven’s first phrase.</span>
-              </button>
-              <button class="lesson-tile hero" data-recipe="Happy Birthday" type="button">
-                <div class="tile-bar"><span class="tile-num gold">10</span><span class="tile-led gold"></span></div>
-                <em>Happy Birthday</em>
-                <span>The whole song, one key at a time.</span>
+                <span>The tune everybody knows, C up to G.</span>
               </button>
             </div>
+          </div>
+
+          <div class="console-bank mt-5" data-tier="intermediate">
+            <div class="bank-header">
+              <p class="intro-kicker"><span>TIER 2</span> // INTERMEDIATE</p>
+              <span class="bank-count">BOTH HANDS · METRONOME</span>
+            </div>
+            <div class="intro-grid">
+              <button class="lesson-tile" data-recipe="Ode to Joy" type="button">
+                <div class="tile-bar"><span class="tile-num">10</span><span class="tile-led amber"></span></div>
+                <em>Ode to Joy</em>
+                <span>Beethoven's phrase, with a left-hand root under it.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="Happy Birthday" type="button">
+                <div class="tile-bar"><span class="tile-num">11</span><span class="tile-led amber"></span></div>
+                <em>Happy Birthday</em>
+                <span>The whole song, plus C, F and G in the left hand.</span>
+              </button>
+              <button class="lesson-tile hero" data-recipe="heart and soul" type="button">
+                <div class="tile-bar"><span class="tile-num gold">12</span><span class="tile-led gold"></span></div>
+                <em>Heart and Soul · duet</em>
+                <span>I play the backing loop. You play the melody. Together.</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="console-bank mt-5" data-tier="advanced">
+            <div class="bank-header">
+              <p class="intro-kicker"><span>TIER 3</span> // ADVANCED</p>
+              <span class="bank-count">AT TEMPO · GLOW FADES</span>
+            </div>
+            <div class="intro-grid">
+              <button class="lesson-tile" data-recipe="C scale" type="button">
+                <div class="tile-bar"><span class="tile-num">13</span><span class="tile-led violet"></span></div>
+                <em>C major scale</em>
+                <span>Eight keys, five fingers — the thumb tucks under.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="chopsticks" type="button">
+                <div class="tile-bar"><span class="tile-num">14</span><span class="tile-led violet"></span></div>
+                <em>Chopsticks</em>
+                <span>Hands alternate. Fast, and instantly recognisable.</span>
+              </button>
+              <button class="lesson-tile" data-recipe="fur elise" type="button">
+                <div class="tile-bar"><span class="tile-num">15</span><span class="tile-led violet"></span></div>
+                <em>Für Elise · opening</em>
+                <span>Your first black keys, at real tempo.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-pick dj-only">
+          <div class="console-bank">
+            <div class="bank-header">
+              <p class="intro-kicker"><span>DECKS</span> // WHAT YOU GET</p>
+              <span class="bank-count">STUDIO OPEN</span>
+            </div>
+            <ul class="dj-list">
+              <li><strong>Five styles</strong> — piano, rave, house, techno, garage. Generate 4 or 8 bars and play over the loop.</li>
+              <li><strong>FX knobs</strong> — filter, distortion, crush, delay, reverb, live on the whole rack.</li>
+              <li><strong>Two layers</strong> — stack a grand under strings, transpose either, lock one and browse the other.</li>
+              <li><strong>Tempo</strong> — drag BPM anywhere from 50 to 180, or just tell me "faster".</li>
+              <li><strong>Export MIDI</strong> — take the loop out to any DAW.</li>
+            </ul>
+            <p class="dj-note">Lessons are hidden while you are in DJ mode. Switch back any time with the teach / DJ toggle above the keys.</p>
           </div>
         </div>
 
@@ -149,15 +224,25 @@
         </form>
 
         <div class="chat-chips">
+          <div class="mode-switch" role="group" aria-label="App mode">
+            <button class="chip" data-mode-pick="teach" type="button" aria-pressed="true">teach</button>
+            <button class="chip" data-mode-pick="dj" type="button" aria-pressed="false">DJ</button>
+          </div>
           <button id="voice-mic" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Talk to the teacher">talk</button>
           <button id="voice-speak" class="chip voice-chip" type="button" aria-pressed="false" aria-label="Teacher reads each step aloud">hear me</button>
-          <button id="next-chip" class="chip" data-recipe="show next" type="button">show next</button>
-          <button class="chip" data-recipe="hear it" type="button">hear it</button>
-          <button class="chip" data-recipe="stop lesson" type="button">stop lesson</button>
+          <button id="next-chip" class="chip teach-only" data-recipe="show next" type="button">show next</button>
+          <button class="chip teach-only" data-recipe="hear it" type="button">hear it</button>
+          <button class="chip teach-only" data-recipe="slow it down" type="button">slow it down</button>
+          <button class="chip teach-only" data-recipe="stop lesson" type="button">stop lesson</button>
           <button class="chip" data-recipe="harmonize" type="button">harmonize</button>
           <button class="chip" data-recipe="answer me" type="button">answer me</button>
           <button id="follow-chip" class="chip" data-recipe="follow me" type="button">follow me</button>
-          <button class="chip" data-recipe="what do you hear" type="button">what do you hear</button>
+          <button class="chip teach-only" data-recipe="what do you hear" type="button">what do you hear</button>
+          <button class="chip dj-only" data-recipe="make me a rave loop" type="button">rave loop</button>
+          <button class="chip dj-only" data-recipe="house beat" type="button">house beat</button>
+          <button class="chip dj-only" data-recipe="techno" type="button">techno</button>
+          <button class="chip dj-only" data-recipe="speed it up" type="button">faster</button>
+          <button class="chip dj-only" data-recipe="reset the sound" type="button">reset sound</button>
         </div>
 
         <details class="chat-transcript">
@@ -286,6 +371,10 @@
               <option value="garage">garage</option>
             </select>
             <button id="bars" class="ghost-btn" type="button"><span id="bars-label">4 BAR</span></button>
+            <label class="tempo-slider">
+              <span>TEMPO</span>
+              <input id="bpm" type="range" min="40" max="200" step="1" value="96" aria-label="Tempo in beats per minute" />
+            </label>
             <button id="generate" class="generate" type="button">Generate</button>
             <button id="export" class="ghost-btn" type="button">Export MIDI</button>
             <button id="restore" class="ghost-btn" type="button" title="Put the sound back to factory. Keeps your lesson and your volume.">Restore</button>
@@ -296,7 +385,7 @@
           </details>
 
           <div class="strip-row">
-            <div id="lesson-strip" class="lesson-strip" aria-live="polite">
+            <div id="lesson-strip" class="lesson-strip teach-only" aria-live="polite">
               <span id="lesson-pill" class="pill next">NEXT</span>
               <span id="lesson-next" class="duet-notes">Ask me to teach</span>
               <span id="lesson-progress" class="duet-mid">NO LESSON</span>
@@ -312,10 +401,18 @@
           </div>
 
           <div class="keybed-bar">
-            <p class="keybed-legend">
+            <p class="keybed-legend teach-only">
               Cyan = play this next · violet = look here · amber = you · green = agent
             </p>
+            <p class="keybed-legend dj-only">
+              DJ MODE · pick a style in STUDIO, hit Generate, then play over the loop
+            </p>
             <div class="keybed-tools">
+              <div class="tempo-tools" role="group" aria-label="Tempo">
+                <button id="bpm-down" class="mini" type="button" aria-label="Slower">−</button>
+                <span id="bpm-label" class="bpm-label" aria-live="polite">96 BPM</span>
+                <button id="bpm-up" class="mini" type="button" aria-label="Faster">+</button>
+              </div>
               <button id="pan-left" class="mini" type="button" aria-label="Show lower keys">◀</button>
               <button id="pan-right" class="mini" type="button" aria-label="Show higher keys">▶</button>
               <button id="note-names" class="mini" type="button">Note names</button>
@@ -327,7 +424,7 @@
                is drawn palm-down as the player looks at it, so finger 1 (thumb) sits
                on the INSIDE of each hand — left thumb on the right, right thumb on
                the left — exactly how the fingers meet the keys. -->
-          <div id="hand-map" class="hand-map hidden" aria-hidden="true">
+          <div id="hand-map" class="hand-map teach-only hidden" aria-hidden="true">
             <div class="hand" data-hand="L">
               <svg viewBox="0 0 132 104" class="hand-svg">
                 <g class="hand-outline" transform="scale(-1,1) translate(-132,0)">
@@ -371,6 +468,7 @@
           </div>
 
           <div id="keybed" class="keybed-scroll">
+            <div id="notefall" class="notefall hidden" aria-hidden="true"></div>
             <div id="piano" class="piano" role="group" aria-label="Virtual piano"></div>
           </div>
         </div>
@@ -394,6 +492,7 @@
         <div class="celebration-stats">
           <div class="stat-pill"><span id="celebration-accuracy">100%</span><em>Accuracy</em></div>
           <div class="stat-pill"><span id="celebration-hits">8 / 8</span><em>Notes Hit</em></div>
+          <div id="celebration-beat-tile" class="stat-pill hidden"><span id="celebration-beat">—</span><em>On the beat</em></div>
         </div>
         <div class="celebration-actions">
           <button id="celebration-next" class="generate lg" type="button">Next Lesson ➔</button>

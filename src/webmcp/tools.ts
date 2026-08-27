@@ -30,6 +30,7 @@ import {
 } from "../engine/lessons";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
 import { playAgentNotes } from "../engine/perform";
+import { retimeTransport } from "../engine/transport";
 import {
   FACTORY_SAMPLES,
   cycleSample,
@@ -40,8 +41,9 @@ import {
   state,
   setPhrase,
 } from "../store";
-import type { LayerId, PhraseStyle } from "../types";
+import type { AppMode, LayerId, PhraseStyle } from "../types";
 import { releaseNote } from "../ui/keyboard";
+import { applyAppMode } from "../ui/mode";
 import type { ToolDefinition } from "./adapter";
 
 const textResult = (text: string) => ({
@@ -126,18 +128,23 @@ export const instrumentTools = (): ToolDefinition[] => [
   },
   {
     name: "list-lessons",
-    description: "List beginner piano lessons on this live page, easiest first: landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-scale, c-chord, twinkle, ode, birthday.",
+    description:
+      "List the piano curriculum on this live page in ladder order, with each lesson's tier and timing mode. First steps: landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-chord. Basic: hot-cross-buns, mary-lamb, twinkle. Intermediate: ode, birthday, heart-and-soul. Advanced: c-scale, chopsticks, fur-elise.",
     inputSchema: { type: "object", properties: {} },
     execute: () => textResult(JSON.stringify({ lessons: listLessons() }, null, 2)),
   },
   {
     name: "start-lesson",
     description:
-      "Start a piano lesson on this shared keyboard. Lights the next keys the student must play. Lessons: landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-scale, c-chord, twinkle, ode, birthday. Teaching only works if they play those keys on this page.",
+      "Start a piano lesson on this shared keyboard. Lights the next keys the student must play. Basic lessons wait forever; Intermediate ones run a metronome and grade timing; Advanced ones add a falling-note highway. heart-and-soul is a duet — the page plays the backing loop while the student plays the melody. Teaching only works if they play those keys on this page.",
     inputSchema: {
       type: "object",
       properties: {
-        lesson: { type: "string", description: "landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-scale, c-chord, twinkle, ode, birthday, or a song name" },
+        lesson: {
+          type: "string",
+          description:
+            "landmarks, first-keys, rh-c-position, lh-c-position, hands-together, c-chord, hot-cross-buns, mary-lamb, twinkle, ode, birthday, heart-and-soul, c-scale, chopsticks, fur-elise, or a song name",
+        },
       },
     },
     execute: ({ lesson }) =>
@@ -530,6 +537,27 @@ export const instrumentTools = (): ToolDefinition[] => [
       }),
   },
   {
+    name: "set-bpm",
+    description:
+      "Set the tempo from 40 to 200 BPM. This is the single most useful thing you can do for a struggling student: halve the tempo, let them play it right, then put it back. Also drives the metronome and the duet loop.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        bpm: { type: "number", minimum: 40, maximum: 200 },
+        /** Relative nudges, so "slow it down" needs no arithmetic from the caller. */
+        scale: { type: "number", minimum: 0.25, maximum: 4, description: "Multiply the current tempo instead, e.g. 0.5 for half speed" },
+      },
+    },
+    execute: ({ bpm, scale }) =>
+      withAgent("set-bpm", () => {
+        const wanted = typeof bpm === "number" ? bpm : state.bpm * Number(scale ?? 1);
+        const next = Math.round(Math.min(200, Math.max(40, wanted)));
+        patchState({ bpm: next });
+        retimeTransport();
+        return textResult(`Tempo ${next} BPM.${next < 80 ? " Nice and slow — play it right, then we speed it up." : ""}`);
+      }),
+  },
+  {
     name: "set-swing",
     description: "Set phrase swing from 0 to 0.4.",
     inputSchema: {
@@ -541,6 +569,24 @@ export const instrumentTools = (): ToolDefinition[] => [
       withAgent("set-swing", () => {
         patchState({ swing: Number(swing) });
         return textResult(`Swing ${swing}`);
+      }),
+  },
+  {
+    name: "set-mode",
+    description:
+      "Switch what the page is for. 'teach' shows the lesson curriculum, the next-key glow and the hand map. 'dj' hides all of that and opens the STUDIO deck: styles, FX knobs, generated loops, MIDI export.",
+    inputSchema: {
+      type: "object",
+      properties: { mode: { type: "string", enum: ["teach", "dj"] } },
+      required: ["mode"],
+    },
+    execute: ({ mode }) =>
+      withAgent("set-mode", () => {
+        const next: AppMode = mode === "dj" ? "dj" : "teach";
+        applyAppMode(next);
+        return next === "dj"
+          ? textResult("DJ mode. Lessons are hidden and the STUDIO deck is open — pick a style and hit Generate.")
+          : textResult("Teaching mode. The curriculum is back. Ask me for a lesson and I will light the first key.");
       }),
   },
 ];

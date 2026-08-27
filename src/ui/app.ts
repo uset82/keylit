@@ -1,4 +1,4 @@
-import { runAgentTurn, type AgentMessage } from "../agent/studio-agent";
+import { runAgentTurn, runLessonTurn, type AgentMessage } from "../agent/studio-agent";
 import {
   applyFx,
   applyMaster,
@@ -16,12 +16,18 @@ import {
   fingerLine,
   isNextTarget,
   landmarkPitchClasses,
+  lessonSpan,
+  lessonTitle,
   nextFingers,
   nextHands,
+  nextLessonAfter,
   nextMidi,
+  scaffold,
   teacherLine,
+  timingAccuracy,
 } from "../engine/lessons";
 import { playHuman, releaseHuman } from "../engine/perform";
+import { retimeTransport } from "../engine/transport";
 import { generatePhrase } from "../engine/generate";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
 import { connectMidi } from "../engine/midi-input";
@@ -36,8 +42,10 @@ import {
   state,
   subscribe,
 } from "../store";
-import type { Hand, LayerId, PhraseNote, PhraseStyle } from "../types";
+import type { Hand, LayerId, LessonId, PhraseNote, PhraseStyle } from "../types";
 import { mountIntro } from "./intro";
+import { mountMode } from "./mode";
+import { renderNotefall } from "./notefall";
 import { mountVoice, primeSpeech } from "./voice";
 import { KEY_COUNT, START_MIDI, isBlack, midiToComputerKey, qwertyToMidi } from "./keyboard";
 
@@ -113,10 +121,10 @@ const noteLabel = (midi: number): string => `${NOTE_NAMES[midi % 12]}${Math.floo
    group — a uniform value makes every accidental sit on a boundary. */
 const BLACK_LEFT: Record<number, number> = { 1: 0.62, 3: 0.76, 6: 0.6, 8: 0.69, 10: 0.78 };
 
-const dressKey = (key: HTMLButtonElement, midi: number): void => {
+const dressKey = (key: HTMLButtonElement, midi: number, rangeStart: number): void => {
   key.dataset.midi = String(midi);
   key.dataset.note = String(midi % 12);
-  key.style.setProperty("--i", String(midi - START_MIDI));
+  key.style.setProperty("--i", String(midi - rangeStart));
   key.setAttribute("aria-label", noteLabel(midi));
   const face = document.createElement("span");
   face.className = "key-face";
@@ -131,35 +139,97 @@ const dressKey = (key: HTMLButtonElement, midi: number): void => {
   }
 };
 
+const LAST_MIDI = START_MIDI + KEY_COUNT - 1;
+
+/** Round down to the C at or below `midi`, staying inside the built range. */
+const octaveFloor = (midi: number): number =>
+  Math.max(START_MIDI, midi - ((midi - START_MIDI) % 12));
+
+/**
+ * How much of the keyboard to draw.
+ *
+ * A full three octaves at a finger-width key is ~1350px. On a phone that is five
+ * visible keys and constant panning — so instead of shrinking keys below a
+ * fingertip, we draw fewer of them: only the octaves the running lesson can
+ * actually ask for. "Find any C" is the exception; it teaches that the black-key
+ * groups repeat, which needs at least two octaves on screen to be visible at all.
+ */
+const keyRange = (): { start: number; count: number } => {
+  const full = { start: START_MIDI, count: KEY_COUNT };
+  // Only phones trade range for key size. A desktop has room for all three
+  // octaves at a comfortable width, so it keeps them — narrowing there would
+  // change behaviour nobody asked to change.
+  const compact =
+    window.matchMedia("(max-width: 640px)").matches ||
+    window.matchMedia("(pointer: coarse) and (max-height: 500px) and (orientation: landscape)").matches;
+  if (!compact) return full;
+
+  const span = lessonSpan();
+  if (!span) {
+    // Idle on a phone: one big octave from middle C.
+    return { start: 60, count: 12 };
+  }
+  const start = octaveFloor(span.lo);
+  // At least one whole octave so the black-key groups read as a pattern, then
+  // extended to whatever the lesson actually reaches. "Find any C" needs two,
+  // because a pattern you only see once is not visibly a pattern.
+  const end = span.repeating ? start + 23 : Math.max(span.hi, start + 11);
+  const count = Math.min(end - start + 1, LAST_MIDI - start + 1);
+  return { start, count };
+};
+
+let renderedRange = "";
+
 const renderKeys = (): void => {
   const board = document.querySelector("#piano");
-  if (!board || board.childElementCount) return;
+  if (!board) return;
+  const { start, count } = keyRange();
+  const signature = `${start}:${count}`;
+  if (signature === renderedRange) return;
+  renderedRange = signature;
+
   const whites: number[] = [];
-  for (let i = 0; i < KEY_COUNT; i += 1) {
-    const midi = START_MIDI + i;
+  for (let i = 0; i < count; i += 1) {
+    const midi = start + i;
     if (!isBlack(midi)) whites.push(midi);
   }
+  const fragment = document.createDocumentFragment();
   whites.forEach((midi, index) => {
     const key = document.createElement("button");
     key.type = "button";
     key.className = "key white";
     key.style.left = `${(index / whites.length) * 100}%`;
     key.style.width = `${100 / whites.length}%`;
-    dressKey(key, midi);
-    board.appendChild(key);
+    dressKey(key, midi, start);
+    fragment.appendChild(key);
   });
-  for (let i = 0; i < KEY_COUNT; i += 1) {
-    const midi = START_MIDI + i;
+  for (let i = 0; i < count; i += 1) {
+    const midi = start + i;
     if (!isBlack(midi)) continue;
     const prevWhite = whites.filter((value) => value < midi).length - 1;
+    // A black key below the first white key of the range has nothing to hang off.
+    if (prevWhite < 0) continue;
     const key = document.createElement("button");
     key.type = "button";
     key.className = "key black";
     key.style.left = `${((prevWhite + (BLACK_LEFT[midi % 12] ?? 0.68)) / whites.length) * 100}%`;
     key.style.width = `${(100 / whites.length) * 0.62}%`;
-    dressKey(key, midi);
-    board.appendChild(key);
+    dressKey(key, midi, start);
+    fragment.appendChild(key);
   }
+  board.replaceChildren(fragment);
+  // The bed's minimum width is a function of how many keys it actually holds,
+  // not a fixed three octaves — otherwise a one-octave lesson still reserves
+  // 1008px and pans for no reason.
+  //
+  // Set on the scroll container, not the board: the note highway sizes itself off
+  // the same variable, and the two must stay the same width or every falling bar
+  // lands over the wrong key.
+  const bed = (board.parentElement as HTMLElement | null) ?? (board as HTMLElement);
+  bed.style.setProperty("--whites", String(whites.length));
+  // The bed just changed width; the pan affordances have to catch up.
+  syncPanButtons();
+  revealedMidi = -1;
 };
 
 /* ---- keybed panning ----
@@ -282,6 +352,17 @@ const updateView = (): void => {
   };
   const together = state.humanHeld.length > 0 && state.agentHeld.length > 0;
   const teaching = Boolean(state.lesson) && state.lesson?.lastGrade !== "done";
+  // One attribute; CSS hides .teach-only / .dj-only off the back of it.
+  if (document.body.dataset.mode !== state.appMode) {
+    document.body.dataset.mode = state.appMode;
+    const studio = document.querySelector<HTMLDetailsElement>(".studio");
+    if (studio) studio.open = state.appMode === "dj";
+  }
+  document.querySelectorAll<HTMLElement>("[data-mode-pick]").forEach((button) => {
+    const picked = button.dataset.modePick === state.appMode;
+    button.classList.toggle("live", picked);
+    button.setAttribute("aria-pressed", String(picked));
+  });
 
   // Trigger celebration modal when a lesson/song is successfully completed
   if (state.lesson && state.lesson.lastGrade === "done" && celebratedLessonId !== state.lesson.id) {
@@ -296,6 +377,15 @@ const updateView = (): void => {
       const accuracy = Math.round((state.lesson.hits / Math.max(1, state.lesson.hits + state.lesson.misses)) * 100);
       const accEl = document.querySelector("#celebration-accuracy");
       if (accEl) accEl.textContent = `${accuracy}%`;
+      // Only timed lessons have a rhythm score, so the tile hides itself on Basic.
+      const beat = timingAccuracy();
+      const beatTile = document.querySelector<HTMLElement>("#celebration-beat-tile");
+      const beatEl = document.querySelector("#celebration-beat");
+      beatTile?.classList.toggle("hidden", beat === null);
+      if (beatEl && beat !== null) beatEl.textContent = `${beat}%`;
+      const upNext = nextLessonAfter(state.lesson.id);
+      const nextBtn = document.querySelector("#celebration-next");
+      if (nextBtn) nextBtn.textContent = upNext ? `${lessonTitle(upNext)} ➔` : "You finished the ladder";
     }
   } else if (!state.lesson || state.lesson.lastGrade !== "done") {
     celebratedLessonId = null;
@@ -325,6 +415,11 @@ const updateView = (): void => {
   set("#midi-label", state.midiDevice);
   set("#style-label", state.style);
   set("#bars-label", `${state.bars} BAR`);
+  set("#bpm-label", `${state.bpm} BPM`);
+  const bpmInput = document.querySelector<HTMLInputElement>("#bpm");
+  if (bpmInput && document.activeElement !== bpmInput && Number(bpmInput.value) !== state.bpm) {
+    bpmInput.value = String(state.bpm);
+  }
   // The dropdown is the one control updateView does not otherwise own, so anything that
   // changes style from outside it — Restore, or the agent's set-style — would leave the
   // menu showing the old name.
@@ -365,6 +460,7 @@ const updateView = (): void => {
     }
   });
   let firstNextKey: HTMLElement | null = null;
+  const help = scaffold();
   document.querySelectorAll<HTMLElement>(".key").forEach((key) => {
     const midi = Number(key.dataset.midi);
     const you = state.humanHeld.includes(midi);
@@ -373,16 +469,21 @@ const updateView = (): void => {
     key.classList.toggle("on-human", you && !agent);
     key.classList.toggle("on-agent", agent && !you);
     key.classList.toggle("on-both", you && agent);
-    key.classList.toggle("on-next", next);
+    key.classList.toggle("on-next", next && help.glow);
     // Violet "look here" cue on the black-key group that locates the target.
     key.classList.toggle("on-landmark", landmarks.includes(midi % 12));
-    setKeyTag(key, "key-badge", next ? midiToComputerKey(midi) ?? "" : "");
-    setKeyTag(key, "key-finger", next ? fingerBadge(midi) : "");
+    setKeyTag(key, "key-badge", next && help.badges ? midiToComputerKey(midi) ?? "" : "");
+    setKeyTag(key, "key-finger", next && help.badges ? fingerBadge(midi) : "");
+    // Panning follows the target even when it is not lit, or an advanced lesson
+    // would scroll the answer off screen.
     if (next && !firstNextKey) firstNextKey = key;
   });
   revealKey(firstNextKey);
   revealKeybed();
+  // Draw only the octaves this lesson needs — no-op unless the range changed.
+  renderKeys();
   renderHands();
+  renderNotefall();
   renderRoll();
 };
 
@@ -445,6 +546,16 @@ const handleAgent = async (): Promise<void> => {
   renderMessages();
 };
 
+/** Start a known lesson without going through phrase matching. */
+const handleLesson = async (id: LessonId): Promise<void> => {
+  messages.push({ role: "user", text: lessonTitle(id) });
+  renderMessages();
+  await ensureAudio();
+  const reply = await runLessonTurn(id);
+  messages.push({ role: "agent", text: reply });
+  renderMessages();
+};
+
 /* ---- segmented LED VU meter ---- */
 
 const METER_W = 26;
@@ -487,6 +598,7 @@ const armEverything = (): void => {
 
 export const mountApp = (): void => {
   mountIntro(armEverything);
+  mountMode();
   mountVoice();
   renderKeys();
   renderMessages();
@@ -514,6 +626,17 @@ export const mountApp = (): void => {
   document.querySelector("#next-b")?.addEventListener("click", () => handleCycle("B", 1));
   document.querySelector("#lock-a")?.addEventListener("click", () => patchLayer("A", { locked: !state.layerA.locked }));
   document.querySelector("#lock-b")?.addEventListener("click", () => patchLayer("B", { locked: !state.layerB.locked }));
+  const setBpm = (next: number): void => {
+    const clamped = Math.round(Math.min(200, Math.max(40, next)));
+    if (clamped === state.bpm) return;
+    patchState({ bpm: clamped });
+    retimeTransport();
+  };
+  document.querySelector("#bpm-down")?.addEventListener("click", () => setBpm(state.bpm - 4));
+  document.querySelector("#bpm-up")?.addEventListener("click", () => setBpm(state.bpm + 4));
+  document.querySelector("#bpm")?.addEventListener("input", (event) => {
+    setBpm(Number((event.target as HTMLInputElement).value));
+  });
   document.querySelector("#generate")?.addEventListener("click", handleGenerate);
   document.querySelector("#export")?.addEventListener("click", () => {
     if (!state.phrase.length) handleGenerate();
@@ -542,7 +665,12 @@ export const mountApp = (): void => {
   // Fires once on observe, so it also covers first layout — the bed's width is
   // not known until the chassis has been laid out.
   if (bed) {
-    new ResizeObserver(syncPanButtons).observe(bed);
+    // Crossing the phone breakpoint changes how many octaves fit, so the bed is
+    // rebuilt as well as re-measured. renderKeys no-ops unless the range moved.
+    new ResizeObserver(() => {
+      renderKeys();
+      syncPanButtons();
+    }).observe(bed);
     // Keeps the edge fades honest as the user swipes the bed.
     bed.addEventListener("scroll", syncPanButtons, { passive: true });
   } else {
@@ -602,35 +730,24 @@ export const mountApp = (): void => {
   const celebrationModal = document.querySelector<HTMLElement>("#celebration-modal");
   document.querySelector("#celebration-replay")?.addEventListener("click", () => {
     celebrationModal?.classList.add("hidden");
-    const field = document.querySelector<HTMLInputElement>("#agent-input");
-    if (field && state.lesson) {
-      field.value = state.lesson.title;
-      void handleAgent();
-    }
+    const id = state.lesson?.id;
+    if (id && id !== "drill") void handleLesson(id);
   });
 
   document.querySelector("#celebration-next")?.addEventListener("click", () => {
     celebrationModal?.classList.add("hidden");
-    const recipes = [
-      "teach me",
-      "first keys",
-      "finger numbers",
-      "left hand",
-      "both hands",
-      "C scale",
-      "C chord",
-      "Twinkle",
-      "Ode to Joy",
-      "Happy Birthday",
-    ];
-    const currentTitle = state.lesson?.title.toLowerCase() || "";
-    const idx = recipes.findIndex((r) => currentTitle.includes(r.toLowerCase()));
-    const nextRecipe = idx >= 0 && idx < recipes.length - 1 ? recipes[idx + 1] : "Twinkle";
-    const field = document.querySelector<HTMLInputElement>("#agent-input");
-    if (field) {
-      field.value = nextRecipe;
-      void handleAgent();
+    // Walks the real lesson table, so a child finishing Hot Cross Buns gets Mary
+    // Had a Little Lamb and a child finishing a tier gets the top of the next one.
+    const next = nextLessonAfter(state.lesson?.id ?? "hot-cross-buns");
+    if (!next) {
+      messages.push({
+        role: "agent",
+        text: "That is the whole ladder — First steps to Advanced. Ask me for any song again, or switch to DJ mode and make something of your own.",
+      });
+      renderMessages();
+      return;
     }
+    void handleLesson(next);
   });
 
   celebrationModal?.addEventListener("click", (e) => {
