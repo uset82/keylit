@@ -391,16 +391,53 @@ const renderMessages = (): void => {
   const log = document.querySelector("#agent-log");
   if (!log) return;
   const bubbles = messages
-    .map((message) => `<p class="bubble ${message.role}"><span>${message.role}</span>${escapeHtml(message.text)}</p>`)
+    .map(
+      (message, idx) =>
+        `<div class="bubble ${message.role}" data-bubble-idx="${idx}">
+          <div class="bubble-head">
+            <span>${message.role}</span>
+            <button class="bubble-copy" type="button" title="Copy message text" data-copy-text="${escapeHtml(message.text)}">Copy</button>
+          </div>
+          <div class="bubble-body">${escapeHtml(message.text)}</div>
+        </div>`,
+    )
     .join("");
   log.innerHTML = agentPending
-    ? `${bubbles}<p class="bubble agent pending"><span>agent</span>Thinking<i></i><i></i><i></i></p>`
+    ? `${bubbles}<div class="bubble agent pending"><div class="bubble-head"><span>agent</span></div><div class="bubble-body">Thinking<i></i><i></i><i></i></div></div>`
     : bubbles;
   log.scrollTop = log.scrollHeight;
-  // Which element actually scrolls depends on the layout: the log itself when
-  // the transcript is stacked under the chips, the <details> around it when it
-  // is a sidebar column. Scrolling a box that does not overflow is a no-op, so
-  // nudging both keeps the newest message in view without asking which is which.
+
+  log.querySelectorAll<HTMLButtonElement>(".bubble-copy").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const textToCopy = btn.dataset.copyText ?? "";
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        btn.textContent = "Copied! ✓";
+        btn.classList.add("copied");
+        window.setTimeout(() => {
+          btn.textContent = "Copy";
+          btn.classList.remove("copied");
+        }, 1800);
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = textToCopy;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        btn.textContent = "Copied! ✓";
+        btn.classList.add("copied");
+        window.setTimeout(() => {
+          btn.textContent = "Copy";
+          btn.classList.remove("copied");
+        }, 1800);
+      }
+    });
+  });
+
   const panel = log.closest<HTMLElement>(".chat-transcript");
   if (panel) panel.scrollTop = panel.scrollHeight;
 };
@@ -875,6 +912,19 @@ export const mountApp = (): void => {
     event.preventDefault();
     void handleAgent();
   });
+  document.querySelector("#chat-paste-btn")?.addEventListener("click", async () => {
+    const field = document.querySelector<HTMLInputElement>("#agent-input");
+    if (!field) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        field.value = (field.value ? field.value + " " : "") + text.trim();
+        field.focus();
+      }
+    } catch {
+      field.focus();
+    }
+  });
   document.querySelector("#music-close")?.addEventListener("click", () => {
     const player = document.querySelector<HTMLAudioElement>("#music-audio");
     player?.pause();
@@ -1007,12 +1057,14 @@ export const mountApp = (): void => {
 
   window.addEventListener("keydown", (event) => {
     if (event.repeat || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     const midi = qwertyToMidi(event.key);
     if (midi === null) return;
     event.preventDefault();
     handlePlayMidi(midi);
   });
   window.addEventListener("keyup", (event) => {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     const midi = qwertyToMidi(event.key);
     if (midi === null) return;
     handleReleaseMidi(midi);
