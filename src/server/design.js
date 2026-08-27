@@ -48,14 +48,12 @@ const SYSTEM_PROMPT = [
   "You are the sound designer for KEYLIT, a browser piano.",
   "You choose from a fixed set of sampled instruments and shape them. You cannot invent new timbres.",
   "",
-  "Reply with JSON only, no prose and no code fences, matching exactly:",
-  '{"reply": "one short friendly sentence, for a child", "patch": {',
-  '  "presetName": "SHORT NAME",',
-  '  "layerA": {"sampleId": "...", "volume": 0-1, "transpose": -24..24},',
-  '  "layerB": {"sampleId": "...", "volume": 0-1, "transpose": -24..24},',
-  '  "adsr": {"attack": 0.001-2, "decay": 0.01-2, "sustain": 0-1, "release": 0.02-3},',
-  '  "fx": {"filter": 0-1, "distortion": 0-1, "crush": 0-1, "delay": 0-1, "reverb": 0-1}',
-  "}}",
+  "Reply with JSON only, no prose and no code fences. Always include a short, friendly `reply`.",
+  "Include `patch` when the user asks to build or change an instrument:",
+  '{"patch": {"presetName": "SHORT NAME", "layerA": {"sampleId": "...", "volume": 0-1, "transpose": -24..24}, "layerB": {"sampleId": "...", "volume": 0-1, "transpose": -24..24}, "adsr": {"attack": 0.001-2, "decay": 0.01-2, "sustain": 0-1, "release": 0.02-3}, "fx": {"filter": 0-1, "distortion": 0-1, "crush": 0-1, "delay": 0-1, "reverb": 0-1}}}',
+  "Include `phrase` when the user asks for a MIDI melody, riff, loop, beat, bassline, chord progression, or notes:",
+  '{"phrase": {"bpm": 40-200, "bars": 4 or 8, "notes": [{"midi": 48-83, "startBeat": 0-31.95, "durationBeats": 0.05-8, "velocity": 1-127}]}}',
+  "Use only those keys. Keep a phrase musical, playable and under 96 notes. Include both patch and phrase if the user asks for both a sound and a MIDI idea.",
   "",
   "filter 0 is dark and muffled, 1 is bright and open.",
   "attack is seconds to full volume: 0.001 is a percussive slap, 0.6 is a slow swell.",
@@ -156,8 +154,11 @@ export const designReply = async ({ description, sheet, apiKey, ip, fetchImpl })
     const parsed = await callModel(model, text, sampleSheet, apiKey, fetchImpl);
     // The page clamps every field again before it touches the audio graph, so
     // this only has to be roughly the right shape.
-    if (parsed && parsed.patch) {
-      return { status: 200, json: { reply: String(parsed.reply ?? ""), patch: parsed.patch, model } };
+    if (parsed && (parsed.patch || parsed.phrase)) {
+      return {
+        status: 200,
+        json: { reply: String(parsed.reply ?? ""), patch: parsed.patch ?? null, phrase: parsed.phrase ?? null, model },
+      };
     }
   }
   return { status: 502, json: { error: "no-usable-reply" } };

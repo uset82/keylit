@@ -1,4 +1,5 @@
 import { clampPatch, sampleSheet, type SoundPatch } from "../engine/patch";
+import { clampGeneratedPhrase, type GeneratedPhrase } from "../engine/generated-phrase";
 
 /**
  * Client half of the LLM tier. Asks /api/design for a patch and gives up quietly.
@@ -18,7 +19,7 @@ const TIMEOUT_MS = 6000;
  */
 let unavailable = false;
 
-export type DesignResult = { patch: SoundPatch; reply: string };
+export type DesignResult = { patch: SoundPatch | null; phrase: GeneratedPhrase | null; reply: string };
 
 export const designViaLlm = async (description: string): Promise<DesignResult | null> => {
   if (unavailable) return null;
@@ -46,14 +47,16 @@ export const designViaLlm = async (description: string): Promise<DesignResult | 
     }
     if (!response.ok) return null;
 
-    const data = (await response.json()) as { reply?: unknown; patch?: unknown };
+    const data = (await response.json()) as { reply?: unknown; patch?: unknown; phrase?: unknown };
     // Clamped here rather than trusted: the server only checked the shape was
-    // roughly right, and this is the last point before the audio graph.
+    // roughly right, and this is the last point before the audio graph and
+    // phrase sequencer.
     const patch = clampPatch(data.patch);
-    if (!patch) return null;
+    const phrase = clampGeneratedPhrase(data.phrase);
+    if (!patch && !phrase) return null;
 
     const reply = typeof data.reply === "string" && data.reply.trim() ? data.reply.trim() : "";
-    return { patch, reply };
+    return { patch, phrase, reply };
   } catch {
     // Aborted, offline, blocked by CSP, served by a host with no /api route —
     // all the same outcome as far as the caller is concerned.

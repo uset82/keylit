@@ -1,4 +1,5 @@
 /*__DESIGN_HANDLER__*/
+/*__MUSIC_HANDLER__*/
 
 const assets = new Map(/*__SITES_ASSETS__*/);
 
@@ -8,14 +9,17 @@ function decodeBase64(value) {
 }
 
 export default {
-  // `env` carries the hosted environment values set in the Site's settings. It is
-  // the only place the OpenRouter key exists in production — never the bundle.
+  // `env` carries hosted provider credentials. They exist only in the worker,
+  // never in the static bundle served to the browser.
   async fetch(request, env) {
     const url = new URL(request.url);
 
     // Before the asset lookup: /api/* is not a file, so the map would 404 it.
     if (url.pathname === "/api/design") {
       return handleDesignRequest(request, env?.OPENROUTER_API_KEY);
+    }
+    if (url.pathname === "/api/music") {
+      return handleMusicRequest(request, env?.MINIMAX_API_KEY, env?.MINIMAX_MUSIC_MODEL);
     }
 
     const pathname = url.pathname === "/" ? "/index.html" : url.pathname;
