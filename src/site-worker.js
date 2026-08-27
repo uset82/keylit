@@ -1,14 +1,25 @@
+const assets = new Map(/*__SITES_ASSETS__*/);
+
+function decodeBase64(value) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
 export default {
-  async fetch(request, env) {
-    if (!env?.ASSETS?.fetch) {
-      return new Response("Static asset binding unavailable", { status: 500 });
-    }
-
+  async fetch(request) {
     const url = new URL(request.url);
-    if (url.pathname === "/") {
-      url.pathname = "/index.html";
+    const pathname = url.pathname === "/" ? "/index.html" : url.pathname;
+    const asset = assets.get(pathname);
+
+    if (!asset) {
+      return new Response("Not found", { status: 404 });
     }
 
-    return env.ASSETS.fetch(new Request(url, request));
+    const headers = new Headers({
+      "cache-control": pathname === "/index.html" ? "no-cache" : "public, max-age=31536000, immutable",
+      "content-type": asset.contentType,
+    });
+    const body = request.method === "HEAD" ? null : decodeBase64(asset.body);
+    return new Response(body, { headers });
   },
 };
