@@ -1,5 +1,5 @@
 import type { PhraseNote } from "../types";
-import { getMasterBus } from "./audio";
+import { getDrumBus } from "./audio";
 
 /**
  * A synthesised drum kit and the patterns that drive it.
@@ -85,14 +85,14 @@ export const drumLoop = (id: DrumPatternId): { notes: PhraseNote[]; loopBeats: n
 });
 
 /**
- * Master bus, not destination.
+ * The drum bus, not destination.
  *
  * Drums skip the filter and crush chain — those knobs belong to the keys the
  * student is playing, and a backing beat that mutates when a child turns the
  * filter down reads as broken. But they must still obey the master volume and
- * register on the meter, so they join one node downstream of the effects.
+ * register on the meter, so they join a trimmed bus just upstream of it.
  */
-const busFor = (ctx: AudioContext): AudioNode => getMasterBus() ?? ctx.destination;
+const busFor = (ctx: AudioContext): AudioNode => getDrumBus() ?? ctx.destination;
 
 /** Short burst of filtered noise — the body of every snare, hat and clap. */
 const noise = (ctx: AudioContext, when: number, duration: number, gainValue: number, hz: number, q = 0.7): void => {

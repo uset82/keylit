@@ -24,6 +24,7 @@ type Voice = {
 };
 
 let context: AudioContext | null = null;
+let limiter: DynamicsCompressorNode | null = null;
 let filter: BiquadFilterNode | null = null;
 let shaper: WaveShaperNode | null = null;
 let crush: AudioWorkletNode | null = null;
@@ -32,6 +33,8 @@ let delayGain: GainNode | null = null;
 let wet: GainNode | null = null;
 let dry: GainNode | null = null;
 let master: GainNode | null = null;
+let outputLimiter: DynamicsCompressorNode | null = null;
+let drumBus: GainNode | null = null;
 let analyser: AnalyserNode | null = null;
 let convolver: ConvolverNode | null = null;
 let mix: GainNode | null = null;
@@ -53,8 +56,13 @@ class CrushProcessor extends AudioWorkletProcessor {
     const input = inputs[0];
     const output = outputs[0];
     const amount = parameters.amount[0] ?? 0;
-    const step = 1 + Math.floor(amount * 28);
-    const bits = Math.max(3, 14 - Math.floor(amount * 11));
+    // Quadratic, not linear. The step below is a sample-and-hold decimation, so
+    // a linear map made 0.14 mean a 4x downsample — an 11 kHz sample rate and
+    // the aliasing that comes with it, at a setting that reads as gentle.
+    // Squared, the lower half of the knob is transparent and the top is
+    // unchanged: 0.14 holds every sample, 0.5 one in seven, 1.0 one in 25.
+    const step = 1 + Math.floor(amount * amount * 24);
+    const bits = Math.max(3, 16 - Math.floor(amount * amount * 13));
     const quant = 2 ** bits;
     for (let c = 0; c < output.length; c += 1) {
       const inp = input[c] || input[0];
@@ -84,6 +92,41 @@ const makeImpulse = (audio: AudioContext): AudioBuffer => {
     }
   }
   return buffer;
+};
+
+/**
+ * Headroom on the mix bus, where every voice sums.
+ *
+ * One node downstream is a `WaveShaperNode`, and its curve is defined only over
+ * [-1, 1] — anything outside returns the endpoint, which is a hard clip at every
+ * distortion setting including zero. Ten notes of the factory grand measured 1.2
+ * here, so an ordinary two-handed chord was already being flat-topped on a
+ * preset whose distortion reads zero. A second layer doubles it again.
+ */
+const MIX_HEADROOM = 0.7;
+
+/** Trim on the drum bus, which joins downstream of the effects. See `getDrumBus`. */
+const DRUM_TRIM = 0.6;
+
+/**
+ * A guard, not a sound: hardest knee and highest ratio the node offers, so with
+ * the headroom in front it is inaudible on ordinary playing and only catches the
+ * peaks that would otherwise flat-top against the shaper.
+ *
+ * -3 dB rather than the -1 dB that looks like the obvious choice for a limiter.
+ * Rendered offline against a sine, -1 dB still let a 2.0 input clip, because the
+ * node applies a makeup gain of about half a dB and a 20:1 ratio is not a wall.
+ * -3 dB holds the output under unity even at 3.0 — a 4x overload — while costing
+ * a quarter of a dB at the level a ten-note chord actually reaches.
+ */
+const makeLimiter = (audio: AudioContext): DynamicsCompressorNode => {
+  const node = audio.createDynamicsCompressor();
+  node.threshold.value = -3;
+  node.knee.value = 0;
+  node.ratio.value = 20;
+  node.attack.value = 0.003;
+  node.release.value = 0.25;
+  return node;
 };
 
 const makeCurve = (amount: number): Float32Array => {
@@ -124,10 +167,12 @@ const bindProgress = (): void => {
 export const getAnalyser = (): AnalyserNode | null => analyser;
 
 /**
- * The master gain, for sources that should obey the volume knob and show on the
- * meter but skip the filter/crush chain — the backing drums are the one case.
+ * A trimmed bus feeding the master gain, for sources that should obey the volume
+ * knob and show on the meter but skip the filter/crush chain — the backing drums
+ * are the one case. Trimmed because a synthesised kick peaks near 0.84 on its
+ * own, which is most of the output budget for one hit.
  */
-export const getMasterBus = (): GainNode | null => master;
+export const getDrumBus = (): GainNode | null => drumBus;
 
 export const applyMaster = (): void => {
   if (master) master.gain.value = state.master;
@@ -140,8 +185,11 @@ export const applyFx = (): void => {
   shaper.curve = makeCurve(state.fx.distortion) as Float32Array<ArrayBuffer>;
   delay.delayTime.value = 0.08 + state.fx.delay * 0.36;
   delayGain.gain.value = state.fx.delay * 0.42;
-  wet.gain.value = state.fx.reverb * 0.55;
-  dry.gain.value = 1 - state.fx.reverb * 0.25;
+  // A true crossfade: the two legs sum to unity at every setting. Summing to
+  // 1.07 at the piano preset's 0.24 and to 1.30 wide open is how a chain with no
+  // headroom left ended up over unity on a patch with the effects switched off.
+  wet.gain.value = state.fx.reverb * 0.5;
+  dry.gain.value = 1 - state.fx.reverb * 0.5;
   const crushAmount = crush?.parameters.get("amount");
   if (crushAmount) crushAmount.setValueAtTime(state.fx.crush, context.currentTime);
 };
@@ -262,6 +310,8 @@ export const initAudio = async (): Promise<void> => {
     claimAudioSession();
     context = new AudioContext({ latencyHint: "interactive" });
     mix = context.createGain();
+    mix.gain.value = MIX_HEADROOM;
+    limiter = makeLimiter(context);
     filter = context.createBiquadFilter();
     filter.type = "lowpass";
     shaper = context.createWaveShaper();
@@ -271,10 +321,14 @@ export const initAudio = async (): Promise<void> => {
     wet = context.createGain();
     convolver = context.createConvolver();
     master = context.createGain();
+    drumBus = context.createGain();
+    drumBus.gain.value = DRUM_TRIM;
+    outputLimiter = makeLimiter(context);
     analyser = context.createAnalyser();
     analyser.fftSize = 256;
 
-    mix.connect(filter);
+    mix.connect(limiter);
+    limiter.connect(filter);
     filter.connect(shaper);
     shaper.connect(dry);
     shaper.connect(delay);
@@ -285,7 +339,11 @@ export const initAudio = async (): Promise<void> => {
     convolver.connect(wet);
     dry.connect(master);
     wet.connect(master);
-    master.connect(analyser);
+    drumBus.connect(master);
+    // The delay feeds back into `dry`, so the instrument chain is not the only
+    // thing that can push the master over unity. This one guards the hardware.
+    master.connect(outputLimiter);
+    outputLimiter.connect(analyser);
     analyser.connect(context.destination);
     applyFx();
     applyMaster();
