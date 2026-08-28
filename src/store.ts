@@ -65,6 +65,7 @@ export const state: InstrumentState = {
   lesson: null,
   phrase: [],
   midiDevice: "None",
+  midiShift: 0,
   sampleEngine: "idle",
   loadProgress: null,
   sustain: false,

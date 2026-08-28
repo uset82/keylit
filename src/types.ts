@@ -157,6 +157,13 @@ export type InstrumentState = {
   lesson: LessonState | null;
   phrase: PhraseNote[];
   midiDevice: string;
+  /**
+   * Semitones added to every note arriving from the MIDI controller, always a
+   * multiple of 12. A 25-key controller's OCT buttons decide which register it
+   * transmits in, and Web MIDI never reports that, so this is learned from what
+   * the student plays. Distinct from `octave`, which is the computer keyboard's.
+   */
+  midiShift: number;
   sampleEngine: SampleEngineStatus;
   loadProgress: LoadProgressState;
   sustain: boolean;

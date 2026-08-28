@@ -10,7 +10,8 @@
     "test:design": "node scripts/check-design.mjs",
     "test:lessons": "node scripts/check-lessons.mjs",
     "test:generate": "node scripts/check-generate.mjs",
-    "test:music": "node scripts/check-music.mjs"
+    "test:music": "node scripts/check-music.mjs",
+    "test:midi": "node scripts/check-midi-octave.mjs"
   },
   "dependencies": {
     "@mcp-b/webmcp-polyfill": "^5.0.1",

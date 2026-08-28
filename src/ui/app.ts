@@ -34,6 +34,7 @@ import { drumLoop, isDrumPattern } from "../engine/drums";
 import { generatePhrase } from "../engine/generate";
 import { downloadBytes, writeMidiFile } from "../engine/midi-file";
 import { connectMidi } from "../engine/midi-input";
+import { shiftSummary } from "../engine/midi-octave";
 import { normalizeAndTrim, storeUserSample } from "../engine/samples";
 import {
   FACTORY_SAMPLES,
@@ -610,7 +611,8 @@ const updateView = (): void => {
   set("#lesson-coach", step?.coach ?? (state.lesson?.lastGrade === "done" ? "You did it. Ask for Twinkle, or hold a chord and say harmonize." : "Press teach me. I will show you where C is first."));
   set("#pedal-label", state.sustain ? "SUSTAIN · DOWN" : "SUSTAIN · UP");
   set("#lcd-adsr", `A ${Math.round(state.adsr.attack * 1000)}ms  D ${Math.round(state.adsr.decay * 1000)}ms  S ${Math.round(state.adsr.sustain * 100)}%  R ${Math.round(state.adsr.release * 1000)}ms`);
-  set("#midi-label", state.midiDevice);
+  const shift = shiftSummary(state.midiShift);
+  set("#midi-label", shift ? `${state.midiDevice} · ${shift}` : state.midiDevice);
   set("#style-label", state.style);
   set("#bars-label", `${state.bars} BAR`);
   set("#bpm-label", `${state.bpm} BPM`);
@@ -997,6 +999,16 @@ export const mountApp = (): void => {
       if (field) field.value = element.dataset.recipe ?? "";
       void handleAgent();
     });
+  });
+
+  // The engine cannot reach the transcript directly, and a MIDI controller in the
+  // wrong octave is exactly the kind of thing the teacher should say out loud
+  // rather than leave the student to infer from a readout they cannot see.
+  window.addEventListener("keylit:coach", (event: Event) => {
+    const text = (event as CustomEvent<string>).detail;
+    if (!text) return;
+    messages.push({ role: "agent", text });
+    renderMessages();
   });
 
   window.addEventListener("keylit:focus-control", (event: Event) => {

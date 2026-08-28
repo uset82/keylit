@@ -1,6 +1,7 @@
 import { patchState } from "../store";
 import { playHuman, releaseHuman } from "./perform";
 import { setSustain } from "./audio";
+import { shiftNoteOff, shiftNoteOn, useDevice } from "./midi-octave";
 
 type MidiPort = {
   name?: string;
@@ -16,7 +17,9 @@ export const connectMidi = async (): Promise<void> => {
     const access = await navigator.requestMIDIAccess();
     const bind = (): void => {
       const inputs = [...access.inputs.values()] as MidiPort[];
-      patchState({ midiDevice: inputs[0]?.name ?? "No controller" });
+      const device = inputs[0]?.name ?? null;
+      patchState({ midiDevice: device ?? "No controller" });
+      useDevice(device);
       inputs.forEach((input) => {
         input.onmidimessage = (event) => {
           const status = event.data[0] ?? 0;
@@ -27,8 +30,11 @@ export const connectMidi = async (): Promise<void> => {
             setSustain(velocity >= 64);
             return;
           }
-          if (command === 0x90 && velocity > 0) playHuman(note, velocity);
-          else if (command === 0x80 || (command === 0x90 && velocity === 0)) releaseHuman(note);
+          // Shifted at the boundary, so the key that lights, the pitch that
+          // sounds and the note that gets graded all agree, whatever register
+          // the controller's octave buttons have it in.
+          if (command === 0x90 && velocity > 0) playHuman(shiftNoteOn(note), velocity);
+          else if (command === 0x80 || (command === 0x90 && velocity === 0)) releaseHuman(shiftNoteOff(note));
         };
       });
     };
