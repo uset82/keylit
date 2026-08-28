@@ -34,12 +34,24 @@ type LessonDef = {
 
 const note = (midi: number, coach: string): LessonStep => ({ midi: [midi], coach });
 
-/** A "find it yourself" step: any octave counts, and the black-key group is lit as the clue. */
+/**
+ * A "find it yourself" step: any octave counts, and the black-key group is lit
+ * as the clue.
+ *
+ * Fingered with the right pointer, which is not decoration: it is lesson one,
+ * and it is the step where the hand map first appears. A child who is told to
+ * point at the key with one named finger has something to DO; a child shown a
+ * lit key and no hand improvises a fist. Finger numbers are not formally taught
+ * until "Right hand, five fingers" two lessons later — the picture gets there
+ * first, which is the right order for a five-year-old.
+ */
 const find = (midi: number, landmark: BlackGroup, coach: string): LessonStep => ({
   midi: [midi],
   coach,
   landmark,
   anyOctave: true,
+  hands: ["R"],
+  fingers: [2],
 });
 
 /** A single-note step that also prescribes a hand and finger. */
@@ -284,20 +296,23 @@ const ODE = ((): LessonStep[] => {
  * called out in the coach line rather than by a finger badge.
  */
 const BIRTHDAY = ((): LessonStep[] => {
-  const line = (notes: SongNote[], words: string, startBeat: number): { steps: LessonStep[]; endBeat: number } =>
-    melody(notes, (midi, index) => `${words} · note ${index + 1}. ${press(midi)}`, {
-      position: {},
-      startBeat,
-    });
+  const line = (notes: FingeredNote[], words: string, startBeat: number): { steps: LessonStep[]; endBeat: number } =>
+    fingeredMelody(notes, (midi, index) => `${words} · note ${index + 1}. ${press(midi)}`, { startBeat });
 
-  const one = line([[60, 0.5], [60, 0.5], [62, 1], [60, 1], [65, 1], [64, 2]], "Happy birthday to you", 0);
-  const two = line([[60, 0.5], [60, 0.5], [62, 1], [60, 1], [67, 1], [65, 2]], "Happy birthday to you", one.endBeat);
+  // Every note carries its own finger because this song will not sit in one
+  // five-finger position: it opens with the thumb on middle C, and on "dear
+  // friend" the whole hand slides up so the thumb lands on F, which is the only
+  // way the top C is reachable. A position map cannot say "65 is finger 4 in
+  // line one and finger 1 in line three", and that shift IS the lesson — so the
+  // hand map has to show it note by note.
+  const one = line([[60, 0.5, 1], [60, 0.5, 1], [62, 1, 2], [60, 1, 1], [65, 1, 4], [64, 2, 3]], "Happy birthday to you", 0);
+  const two = line([[60, 0.5, 1], [60, 0.5, 1], [62, 1, 2], [60, 1, 1], [67, 1, 5], [65, 2, 4]], "Happy birthday to you", one.endBeat);
   const three = line(
-    [[60, 0.5], [60, 0.5], [72, 1], [69, 1], [65, 1], [67, 1], [65, 2]],
+    [[60, 0.5, 1], [60, 0.5, 1], [72, 1, 5], [69, 1, 3], [65, 1, 1], [67, 1, 2], [65, 2, 1]],
     "Happy birthday dear friend",
     two.endBeat,
   );
-  const four = line([[70, 0.5], [70, 0.5], [69, 1], [65, 1], [67, 1], [65, 2]], "Happy birthday to you", three.endBeat);
+  const four = line([[70, 0.5, 4], [70, 0.5, 4], [69, 1, 3], [65, 1, 1], [67, 1, 2], [65, 2, 1]], "Happy birthday to you", three.endBeat);
   // The high C is the shift: the hand cannot reach it from middle C.
   three.steps[2].coach = "Happy birthday dear friend · note 3. This one is high — slide your whole right hand up so your thumb lands on F. Press I.";
   four.steps[0].coach = "Happy birthday to you · note 1. B flat — the black key just left of the top B. Press 7.";
@@ -450,10 +465,10 @@ const LESSONS: LessonDef[] = [
     timing: "free",
     coach: "You can find C now. Play the first three white keys in a row.",
     steps: [
-      note(60, "This is middle C — the C nearest the middle of the piano. Press Q, or click the glowing key."),
-      note(62, "D, right next door. Press W."),
-      note(64, "E, one more white key to the right. Press E."),
-      { midi: [60, 64], hold: true, coach: "Now hold C and E together — Q and E at the same time." },
+      play(60, "R", 1, "This is middle C — the C nearest the middle of the piano. Press Q, or click the glowing key."),
+      play(62, "R", 2, "D, right next door. Press W."),
+      play(64, "R", 3, "E, one more white key to the right. Press E."),
+      chord([60, 64], "Now hold C and E together — Q and E at the same time.", 0, "R"),
     ],
   },
   {
@@ -550,10 +565,10 @@ const LESSONS: LessonDef[] = [
     timing: "free",
     coach: "Build the triad. I show each note, then you hold all three.",
     steps: [
-      note(60, "Root: C. Q."),
-      note(64, "Third: E. E."),
-      note(67, "Fifth: G. T."),
-      { midi: [60, 64, 67], hold: true, coach: "Hold C E G together — Q E T. That is C major." },
+      play(60, "R", 1, "Root: C. Q."),
+      play(64, "R", 3, "Third: E. E."),
+      play(67, "R", 5, "Fifth: G. T."),
+      chord([60, 64, 67], "Hold C E G together — Q E T. That is C major.", 0, "R"),
     ],
   },
 
@@ -820,6 +835,24 @@ export const nextFingers = (): Finger[] => currentStep()?.fingers ?? [];
 export const nextHands = (): Hand[] => currentStep()?.hands ?? [];
 
 export const nextLandmark = (): BlackGroup | null => currentStep()?.landmark ?? null;
+
+/**
+ * The step AFTER the current one, or null at the end of a lesson.
+ *
+ * The hand map pre-lights this as a dashed ghost. Fingering is a continuous
+ * motion — the same note takes a different finger depending on what follows it
+ * — so a player who only ever sees the note under the cursor learns a stack of
+ * separate stabs. Showing the move one beat early is what lets the hand travel.
+ */
+export const peekStep = (): LessonStep | null => {
+  const lesson = state.lesson;
+  if (!lesson || lesson.lastGrade === "done") return null;
+  return lesson.steps[lesson.stepIndex + 1] ?? null;
+};
+
+export const peekFingers = (): Finger[] => peekStep()?.fingers ?? [];
+
+export const peekHands = (): Hand[] => peekStep()?.hands ?? [];
 
 /**
  * Lowest and highest note the running lesson will ever ask for, plus whether it

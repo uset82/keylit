@@ -813,75 +813,261 @@ select.mini option {
 
 .tempo-slider input { width: 116px; accent-color: rgb(var(--next)); }
 
-.hand-map {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  margin-top: 12px;
-  padding: 10px 12px 8px;
-  border-radius: 10px;
-  background: var(--well);
-  border: 1px solid var(--well-line);
-  box-shadow: inset 0 2px 8px rgba(0,0,0,.6);
-}
+/* ---------- finger lights ----------------------------------------------
+   A lit key on its own only says WHERE. This panel says WITH WHAT, and it is
+   the half a young beginner actually needs, so it gets real size: two hands
+   up to 250px each, numerals a child can read across a room, and exactly one
+   finger burning at a time. Everything here is tuned around a single rule —
+   the finger to press is drawn in --next, the same cyan as the key to press,
+   so the instruction is completed by matching a colour rather than by reading.
+   ----------------------------------------------------------------------- */
 
-.hand {
+.hand-map {
+  /* Silhouette tones live here so the active/idle swap is two lines, not ten. */
+  --skin: #171c22;
+  --skin-edge: #2c333b;
+  /* One hand. Bounded by viewport HEIGHT as well as width, because the panel
+     sits directly above the keybed and a hand that wins that fight has taught
+     the child nothing - there is no key left on screen to press. */
+  --hand-w: clamp(118px, min(19vw, 22vh), 250px);
+
   display: grid;
   justify-items: center;
-  gap: 4px;
-  opacity: .38;
-  transition: opacity var(--t-ui) var(--ease-out);
+  gap: 10px;
+  /* Hugs the two hands rather than stretching the full rack, so the panel reads
+     as one lit object instead of a mostly-empty shelf. */
+  width: fit-content;
+  max-width: 100%;
+  margin: 12px auto 0;
+  padding: 14px 18px 10px;
+  border-radius: 16px;
+  background:
+    radial-gradient(130% 100% at 50% -10%, rgba(94,200,255,.09), transparent 64%),
+    var(--well);
+  border: 1px solid var(--well-line);
+  box-shadow:
+    inset 0 2px 12px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(255,255,255,.02);
 }
 
-.hand.active { opacity: 1; }
-
-.hand em {
-  font-style: normal;
-  font-size: 8px;
-  letter-spacing: .22em;
-  color: var(--label-dim);
+/* The instruction in words, once, big. Everything else on the panel is a
+   picture of this sentence. */
+.hand-cue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-family: var(--font-display);
+  font-size: clamp(13px, 1.5vw, 19px);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-align: center;
 }
 
-.hand.active em { color: var(--label); }
+.hand-cue-side {
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: rgba(var(--next), .16);
+  border: 1px solid rgba(var(--next), .5);
+  color: rgb(var(--next));
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
 
-.hand-svg { width: 130px; height: 102px; }
+.hand-cue-detail { color: var(--label); }
+.hand-cue-detail strong { color: var(--text); font-weight: 800; }
 
-.hand-outline .palm,
-.hand-outline .bone {
-  fill: rgba(255,255,255,.05);
-  stroke: var(--hairline);
-  stroke-width: 2;
+.hand-sprite { position: absolute; }
+
+.hand-pair {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(10px, 3vw, 48px);
+}
+
+/* The idle hand steps back rather than disappearing: a child still needs to see
+   that there are two, and which one they were NOT asked for. Scale rather than
+   width, so nothing reflows and the two hands trade places smoothly when a
+   lesson crosses over. */
+.hand {
+  position: relative;
+  opacity: .32;
+  filter: saturate(.2);
+  transform: scale(.84);
+  transform-origin: bottom center;
+  transition:
+    opacity var(--t-ui) var(--ease-out),
+    filter var(--t-ui) var(--ease-out),
+    transform 260ms var(--ease-out);
+}
+
+.hand.active { opacity: 1; filter: none; transform: scale(1); }
+
+.hand-svg {
+  display: block;
+  width: var(--hand-w);
+  height: auto;
+}
+
+/* Two passes of the same <g>: a fat round-joined stroke behind, fills on top.
+   The stroke that lands inside the union is painted over, which unions seven
+   overlapping capsules into one silhouette with no seams and no bespoke path. */
+.hand-ink {
+  fill: var(--skin-edge);
+  stroke: var(--skin-edge);
+  stroke-width: 5;
+  stroke-linejoin: round;
   transition: fill var(--t-ui) var(--ease-out), stroke var(--t-ui) var(--ease-out);
 }
 
-.hand.active .hand-outline .palm,
-.hand.active .hand-outline .bone {
-  fill: rgba(var(--you),.08);
-  stroke: rgba(var(--you),.42);
+.hand-fill {
+  fill: var(--skin);
+  transition: fill var(--t-ui) var(--ease-out);
 }
 
-.digit circle {
-  fill: #1b1e21;
-  stroke: var(--hairline);
-  stroke-width: 1.5;
+.hand.active { --skin: #1d242c; --skin-edge: #46515d; }
+
+/* Printed on the wrist rather than parked under it. The cuff is the one solid
+   band of the silhouette with nothing else on it, and a caption row of its own
+   would cost 20px of the height the keybed is already fighting for. */
+.hand-name {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-family: var(--font-display);
+  font-size: clamp(9px, 1vw, 13px);
+  font-weight: 700;
+  letter-spacing: .26em;
+  text-indent: .26em;
+  white-space: nowrap;
+  color: var(--label-dim);
+  transition: color var(--t-ui) var(--ease-out);
+}
+
+.hand.active .hand-name { color: var(--text); }
+
+/* --- the fingers ------------------------------------------------------- */
+
+.digit { transition: transform 220ms var(--ease-out); }
+
+/* The whole finger lights, not just its badge: at arm's length a child reads
+   the lit SHAPE long before they resolve the numeral inside it. */
+.finger-glow {
+  fill: rgb(var(--next));
+  opacity: 0;
+  transition: opacity var(--t-ui) var(--ease-out);
+}
+
+.halo {
+  fill: rgb(var(--next));
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.ring {
+  fill: #0d1116;
+  stroke: #545d68;
+  stroke-width: 2.5;
   transition: fill var(--t-ui) var(--ease-out), stroke var(--t-ui) var(--ease-out);
 }
 
 .digit text {
-  fill: var(--label-dim);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  font-weight: 600;
+  fill: #949ca5;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
   text-anchor: middle;
+  dominant-baseline: central;
   transition: fill var(--t-ui) var(--ease-out);
 }
 
-.digit.lit circle {
-  fill: rgb(var(--you));
-  stroke: #fff3d2;
+/* PRESS THIS ONE. */
+.digit.lit .finger-glow { opacity: .3; }
+.digit.lit .ring { fill: rgb(var(--next)); stroke: #eaf9ff; stroke-width: 3; }
+.digit.lit text { fill: #04222e; }
+
+.digit.lit {
+  animation: finger-press 1.25s var(--ease-out) infinite;
 }
 
-.digit.lit text { fill: #1b1408; }
+.digit.lit .halo { animation: finger-halo 1.25s ease-out infinite; }
+
+/* Get ready: the step AFTER this one, dashed and unfilled. A hand that only
+   ever learns the note under the cursor plays a row of stabs; seeing the next
+   finger a beat early is what turns the row into one travelling shape. */
+.digit.ready .ring {
+  fill: rgba(186,148,255,.1);
+  stroke: rgba(var(--landmark), .8);
+  stroke-width: 2.5;
+  stroke-dasharray: 5 4;
+  animation: ready-spin 6s linear infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.digit.ready text { fill: rgba(var(--landmark), .95); }
+
+@keyframes finger-press {
+  0%, 100% { transform: translateY(0); }
+  42%      { transform: translateY(8px); }
+}
+
+@keyframes finger-halo {
+  0%   { opacity: .5; transform: scale(1); }
+  100% { opacity: 0;  transform: scale(2.3); }
+}
+
+@keyframes ready-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* The finger and the key it belongs to sit ~200px apart with a note highway in
+   between. This is the arrow that joins them. */
+.hand-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-bottom: 14%;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .26em;
+  text-indent: .26em;
+  text-transform: uppercase;
+  color: rgba(var(--next), .85);
+}
+
+.hand-drop i {
+  font-style: normal;
+  font-size: 13px;
+  line-height: 1;
+  animation: hand-drop-fall 1.25s var(--ease-out) infinite;
+}
+
+@keyframes hand-drop-fall {
+  0%, 100% { transform: translateY(-2px); opacity: .55; }
+  45%      { transform: translateY(4px);  opacity: 1; }
+}
+
+/* A looping press under a learner who is already struggling to track motion is
+   the opposite of help. Colour still carries the whole instruction. */
+@media (prefers-reduced-motion: reduce) {
+  .digit.lit,
+  .digit.lit .halo,
+  .digit.ready .ring,
+  .hand-drop i { animation: none; }
+  .digit.lit .halo { opacity: .22; }
+}
 
 /* next-key letter badge (created by updateView) */
 .key-badge {
@@ -2210,6 +2396,21 @@ body[data-mode="teach"] .dj-only { display: none !important; }
   /* The bed bleeds to the case edge; match the reduced rack padding. */
   .keybed-scroll { margin: 10px -14px 0; }
 
+  /* A phone is the one place a viewport-width hand can overflow, because two
+     of them plus a gap have to clear 320px. Sized off the CONTAINER instead:
+     the pair spans the rack and splits it, so the hands are as big as the
+     phone allows and can never push the page sideways. */
+  .hand-map { width: auto; --hand-w: 176px; gap: 6px; padding: 9px 7px 6px; }
+  .hand-pair { width: 100%; gap: 4px; }
+  .hand { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+  .hand-svg { width: 100%; max-width: var(--hand-w); }
+  .hand-cue { font-size: 13px; }
+
+  /* A third column between the hands costs 50px of width here, and width is
+     what sizes the hands. The keybed is directly under the panel on a phone,
+     so the arrow has almost no distance left to point across. */
+  .hand-drop { display: none; }
+
   main {
     padding-left: max(12px, env(safe-area-inset-left));
     padding-right: max(12px, env(safe-area-inset-right));
@@ -2375,6 +2576,14 @@ body[data-mode="teach"] .dj-only { display: none !important; }
 
   .rack-face { padding: 6px 12px 0; }
   .keybed-scroll { margin: 6px -12px 0; }
+
+  /* Landscape height is the one budget the keys always win. The hands stay -
+     they are the instruction - but shrink to a glance, and the arrow goes:
+     at this size the hands are already touching the keybed. */
+  .hand-map { --hand-w: clamp(72px, 13vh, 104px); gap: 3px; padding: 5px 10px 5px; margin-top: 6px; }
+  .hand-cue { font-size: 11px; gap: 4px 8px; }
+  .hand-cue-side { padding: 2px 8px; }
+  .hand-drop { display: none; }
   .keybed-bar { margin-top: 4px; }
   .keybed-tools .mini { min-height: 40px; min-width: 40px; padding: 8px; }
 
