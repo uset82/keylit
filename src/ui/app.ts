@@ -22,6 +22,8 @@ import {
   nextHands,
   nextLessonAfter,
   nextMidi,
+  peekFingers,
+  peekHands,
   scaffold,
   teacherLine,
   timingAccuracy,
@@ -43,7 +45,7 @@ import {
   state,
   subscribe,
 } from "../store";
-import type { Hand, LayerId, LessonId, PhraseNote, PhraseStyle } from "../types";
+import type { Finger, Hand, LayerId, LessonId, PhraseNote, PhraseStyle } from "../types";
 import { mountIntro } from "./intro";
 import { mountMode } from "./mode";
 import { renderNotefall } from "./notefall";
@@ -462,22 +464,78 @@ const setKeyTag = (key: HTMLElement, className: string, text: string): void => {
   key.appendChild(tag);
 };
 
+/**
+ * Kid-facing names for the five fingers. "Finger 4" is a number a child has to
+ * look up; "your ring finger" is one they can already find without looking at
+ * the screen — which is the whole point, because their eyes are on the keys.
+ */
+const FINGER_NAMES: Record<number, string> = {
+  1: "thumb",
+  2: "pointer",
+  3: "tall finger",
+  4: "ring finger",
+  5: "pinky",
+};
+
+const HAND_WORDS: Record<Hand, string> = { L: "LEFT HAND", R: "RIGHT HAND" };
+
+/** Which hand the finger at `index` belongs to; steps default to a single hand. */
+const handAt = (hands: Hand[], index: number): Hand => hands[index] ?? hands[0] ?? "R";
+
+/**
+ * "finger 3 · your tall finger", or "fingers 1 + 3 + 5" for a chord. Named
+ * fingers are dropped past two, where the list stops being readable at a glance
+ * and the lit shapes on the hand carry it instead.
+ */
+const fingerPhrase = (fingers: Finger[]): string => {
+  if (fingers.length === 1) return `finger ${fingers[0]} · your ${FINGER_NAMES[fingers[0]]}`;
+  return `fingers ${fingers.join(" + ")}`;
+};
+
 /** Light the finger(s) the current step asks for, and hide the map when none. */
 const renderHands = (): void => {
-  const map = document.querySelector("#hand-map");
+  const map = document.querySelector<HTMLElement>("#hand-map");
   if (!map) return;
   const fingers = nextFingers();
   const hands = nextHands();
+  const ready = peekFingers();
+  const readyHands = peekHands();
   map.classList.toggle("hidden", fingers.length === 0);
+
   map.querySelectorAll<HTMLElement>("[data-hand]").forEach((hand) => {
     const side = hand.dataset.hand as Hand;
     hand.classList.toggle("active", hands.includes(side));
     hand.querySelectorAll<HTMLElement>(".digit").forEach((digit) => {
       const finger = Number(digit.dataset.finger);
-      const lit = fingers.some((value, index) => value === finger && (hands[index] ?? hands[0]) === side);
+      const lit = fingers.some((value, index) => value === finger && handAt(hands, index) === side);
+      // A finger already burning is never also dashed: two states on one digit
+      // reads as neither.
+      const soon =
+        !lit && ready.some((value, index) => value === finger && handAt(readyHands, index) === side);
       digit.classList.toggle("lit", lit);
+      digit.classList.toggle("ready", soon);
     });
   });
+
+  if (!fingers.length) return;
+  const sides = [...new Set(hands)];
+  const bothHands = sides.length > 1;
+  const setText = (id: string, text: string) => {
+    const el = map.querySelector(id);
+    if (el && el.textContent !== text) el.textContent = text;
+  };
+  setText("#hand-cue-side", bothHands ? "BOTH HANDS" : HAND_WORDS[sides[0] ?? "R"]);
+  setText(
+    "#hand-cue-detail",
+    bothHands
+      ? sides
+          .map((side) => {
+            const own = fingers.filter((_, index) => handAt(hands, index) === side);
+            return `${side === "L" ? "left" : "right"} ${own.join(" + ")}`;
+          })
+          .join("  ·  ")
+      : fingerPhrase(fingers),
+  );
 };
 
 let celebratedLessonId: string | null = null;

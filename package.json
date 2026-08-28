@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build && node scripts/prepare-site.mjs",
     "preview": "vite preview",
     "test:design": "node scripts/check-design.mjs",
+    "test:lessons": "node scripts/check-lessons.mjs",
     "test:generate": "node scripts/check-generate.mjs",
     "test:music": "node scripts/check-music.mjs"
   },
@@ -19,6 +20,7 @@
     "@mcp-b/webmcp-types": "^5.0.1",
     "@openai/sites-vite-plugin": "^0.2.0",
     "autoprefixer": "^10.4.20",
+    "jiti": "^1.21.7",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.2",

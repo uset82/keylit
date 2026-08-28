@@ -55,14 +55,16 @@ const PROFILES: Record<PhraseStyle, StyleProfile> = {
     bpm: 130,
   },
   // F major I-vi-IV-V, the progression under most of house, comped on the
-  // downbeat and the two offbeats that give it its push.
+  // downbeat and the two offbeats that give it its push. The gate stops at the
+  // bar line: at four sixteenths the last stab rang into the next downbeat, and
+  // consecutive degrees here share two pitches, so it re-struck its own notes.
   house: {
     tonic: 53,
     scale: MAJOR,
     progression: [0, 5, 3, 4],
     mask: [96, 0, 0, 0, 0, 0, 92, 0, 0, 0, 0, 0, 0, 0, 88, 0],
     voices: [0, 1, 2],
-    gateSteps: 3,
+    gateSteps: 2,
     bpm: 124,
   },
   // C minor i-VII-VI-VII, hit twice fast off the downbeat: the rave stab.
@@ -85,14 +87,16 @@ const PROFILES: Record<PhraseStyle, StyleProfile> = {
     gateSteps: 3,
     bpm: 132,
   },
-  // Held sevenths, two to a bar. The one profile that is not a stab.
+  // Sevenths, two to a bar. The one profile that is not a stab, so the gate is
+  // long — but shorter than the gap between the hits, because both hits in a bar
+  // take the same degree and so sound the same four pitches.
   piano: {
     tonic: 60,
     scale: MAJOR,
     progression: [0, 5, 3, 4],
     mask: [92, 0, 0, 0, 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0],
     voices: [0, 1, 2, 3],
-    gateSteps: 14,
+    gateSteps: 7,
     bpm: 96,
   },
 };
@@ -121,9 +125,16 @@ const intoRange = (midi: number): number => {
 export const generatePhrase = (style: PhraseStyle, bars: 4 | 8): PhraseNote[] => {
   const profile = PROFILES[style] ?? PROFILES.piano;
   const notes: PhraseNote[] = [];
-  // Two notes of the same pitch at the same instant are not a chord, they are
-  // one note at double the level — which is what fed the distortion stage.
-  const placed = new Set<string>();
+  /**
+   * The beat each pitch stays sounding until.
+   *
+   * Two notes of one pitch are not a chord, they are one note at double the
+   * level, and because the rompler never steals a voice from itself the second
+   * one beats against the first. Guarding the whole ring, not just the attack,
+   * is what makes the check bite: the piano profile's overlap sat 1.5 beats
+   * apart, so an attack-only test waved it straight through.
+   */
+  const soundingUntil = new Map<number, number>();
 
   for (let bar = 0; bar < bars; bar += 1) {
     const degree = profile.progression[bar % profile.progression.length];
@@ -132,15 +143,16 @@ export const generatePhrase = (style: PhraseStyle, bars: 4 | 8): PhraseNote[] =>
       const velocity = profile.mask[step];
       if (!velocity) continue;
       const startBeat = bar * 4 + step * BEATS_PER_STEP;
+      const durationBeats = profile.gateSteps * BEATS_PER_STEP;
       profile.voices.forEach((voice, index) => {
         const midi = intoRange(profile.tonic + tones[voice]);
-        const key = `${midi}@${startBeat}`;
-        if (placed.has(key)) return;
-        placed.add(key);
+        const busyUntil = soundingUntil.get(midi);
+        if (busyUntil !== undefined && busyUntil > startBeat) return;
+        soundingUntil.set(midi, startBeat + durationBeats);
         notes.push({
           midi,
           startBeat,
-          durationBeats: profile.gateSteps * BEATS_PER_STEP,
+          durationBeats,
           velocity: Math.max(32, Math.min(127, velocity - index * 6)),
         });
       });

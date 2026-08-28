@@ -38,6 +38,29 @@ for (const style of STYLES) {
     });
     check(`${tag}: no doubled pitch on one beat`, collisions.length === 0, `${collisions.length} doubled`);
 
+    // The same bug in its wider form, and the one the check above waved through:
+    // a pitch struck again while the first is still ringing. The rompler never
+    // steals a voice from itself, so the two beat against each other. Every
+    // beat here is a multiple of 1/16, exact in binary, so no epsilon is needed.
+    const byPitch = new Map();
+    notes.forEach((note) => {
+      const list = byPitch.get(note.midi) ?? [];
+      list.push(note);
+      byPitch.set(note.midi, list);
+    });
+    const overlaps = [];
+    byPitch.forEach((list, midi) => {
+      list
+        .sort((a, b) => a.startBeat - b.startBeat)
+        .forEach((note, index) => {
+          const previous = list[index - 1];
+          if (previous && previous.startBeat + previous.durationBeats > note.startBeat) {
+            overlaps.push(`${midi} at ${note.startBeat}`);
+          }
+        });
+    });
+    check(`${tag}: no pitch overlaps itself`, overlaps.length === 0, overlaps.join(", "));
+
     // A hit whose start is past the loop is a hit playing over the next bar.
     const overrun = notes.filter((note) => note.startBeat >= bars * 4);
     check(`${tag}: every hit inside the loop`, overrun.length === 0, `${overrun.length} past beat ${bars * 4}`);
