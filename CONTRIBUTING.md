@@ -27,7 +27,18 @@ npm run build
 
 That runs `tsc --noEmit`, then the Vite build, then the Sites packaging step. **It must pass before you open a PR.**
 
-There are no tests. Verification is done by using the thing — the checklist at the bottom of this file is the one we actually run.
+The repo has check scripts, not a test runner. Run the ones that touch what you changed; run all of them before a PR:
+
+```bash
+npm run test:lessons
+npm run test:generate
+npm run test:design
+npm run test:music
+npm run test:midi
+npm run test:mcp
+```
+
+Coding agents should read [`AGENTS.md`](AGENTS.md). To let Codex call the piano tools on a local page, see [`docs/codex.md`](docs/codex.md).
 
 ---
 

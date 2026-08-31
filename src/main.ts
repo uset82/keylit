@@ -17,8 +17,20 @@ void (async () => {
     if (status) {
       status.textContent = count > 0 ? `WebMCP live · ${count} tools` : "WebMCP · local tools";
     }
+    if (import.meta.env.DEV) {
+      const { mountCodexBridge } = await import("./dev/codex-bridge");
+      mountCodexBridge();
+    }
   } catch {
     if (status) status.textContent = "WebMCP · local tools";
+    if (import.meta.env.DEV) {
+      try {
+        const { mountCodexBridge } = await import("./dev/codex-bridge");
+        mountCodexBridge();
+      } catch {
+        // The page still teaches without Codex.
+      }
+    }
   }
 })();
 

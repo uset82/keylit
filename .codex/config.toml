@@ -1,0 +1,8 @@
+# Project-scoped Codex MCP. Loaded only when this directory is trusted.
+# Piano tools appear after `npm run dev` and a tab has armed audio.
+# See docs/codex.md.
+
+[mcp_servers.keylit]
+command = "node"
+args = ["scripts/keylit-mcp.mjs"]
+startup_timeout_sec = 20

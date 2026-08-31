@@ -17,6 +17,14 @@ async function collectFiles(directory) {
 
 await collectFiles(distRoot);
 
+for (const filePath of files) {
+  if (!filePath.endsWith(".js")) continue;
+  const text = await readFile(filePath, "utf8");
+  if (text.includes("codex-bridge") || text.includes("mountCodexBridge")) {
+    throw new Error(`Codex DEV bridge leaked into ${path.relative(distRoot, filePath)} — it is localhost-only`);
+  }
+}
+
 const assets = [];
 for (const filePath of files) {
   const relativePath = path.relative(distRoot, filePath).split(path.sep).join("/");

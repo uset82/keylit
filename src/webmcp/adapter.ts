@@ -70,6 +70,17 @@ export const listTools = async (): Promise<RegisteredTool[]> => {
 
 const pendingLocal = new Map<string, ToolExecute>();
 
+export type ToolCatalogEntry = {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+};
+
+const localCatalog: ToolCatalogEntry[] = [];
+
+/** Name, description and schema of every tool this page owns — no execute bodies. */
+export const listLocalCatalog = (): ToolCatalogEntry[] => localCatalog.map((entry) => ({ ...entry }));
+
 /**
  * Runs a tool by name. Tools this page registered are called directly: routing our own
  * agent's calls out through the host and back is a pointless round-trip that fails
@@ -90,5 +101,14 @@ export const runTool = async (
 };
 
 export const rememberLocal = (tools: ToolDefinition[]): void => {
-  tools.forEach((tool) => pendingLocal.set(tool.name, tool.execute));
+  pendingLocal.clear();
+  localCatalog.length = 0;
+  tools.forEach((tool) => {
+    pendingLocal.set(tool.name, tool.execute);
+    localCatalog.push({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+    });
+  });
 };
